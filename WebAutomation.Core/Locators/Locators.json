@@ -1,0 +1,18 @@
+{
+    "LoginPage.Username": {
+        "Type": "id",
+        "Value": "username"
+    },
+    "LoginPage.Password": {
+        "Type": "id",
+        "Value": "password"
+    },
+    "LoginPage.LoginButton": {
+        "Type": "css",
+        "Value": "button[type='submit']"
+    },
+    "Dashboard.Header": {
+        "Type": "css",
+        "Value": "h1.dashboard-header"
+    }
+}
