@@ -1,53 +1,45 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
+using WebAutomation.Core.Utilities;
+using System;
+using System.Globalization;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class PaymentPage : BasePage
+    public class PaymentPage
     {
-        private readonly LocatorRepository _repo;
+        private readonly IWebDriver _driver;
+        private readonly SmartWait _wait;
 
-        public PaymentPage(IWebDriver driver) : base(driver)
+        public PaymentPage(IWebDriver driver)
         {
-            _repo = new LocatorRepository("Locators/Locators.txt");
+            _driver = driver;
+            _wait = new SmartWait(driver);
         }
 
-        public void ContinueScheduledPaymentIfPresent()
+        public bool IsPageReady()
         {
-            // Scheduled payment popup
-            if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactPopup")))
-            {
-                if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactContinue")))
-                {
-                    Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
-                }
-            }
+            // Use a unique element on the Make a Payment page
+            return _wait.UntilPresent(By.CssSelector("span"), 10);
         }
 
         public void OpenDatePicker()
         {
-            Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            _wait.UntilClickable(By.CssSelector("mat-datepicker-toggle button")).Click();
+            _wait.WaitForOverlay();
         }
 
-        public void SelectPaymentDate(string paymentDate)
+        public void SelectPaymentDate(string date)
         {
-            var date = System.DateTime.Parse(paymentDate);
-            string day = date.Day.ToString();
-            Wait.UntilClickable(_repo.GetBy("Payment.Calendar.Day", day)).Click();
+            var dt = DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            // Assumes calendar is already open
+            _wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and normalize-space(text())='{dt.Day}']")).Click();
+            _wait.WaitForOverlayToClose();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            try
-            {
-                return Driver.FindElement(_repo.GetBy("Payment.LateFee.Message")).Displayed;
-            }
-            catch (NoSuchElementException)
-            {
-                return false;
-            }
+            return _wait.UntilPresent(By.Id("latefeeInfoMsg1"), 2);
         }
     }
 }

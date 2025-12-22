@@ -1,46 +1,47 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
+using WebAutomation.Core.Utilities;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class DashboardPage : BasePage
+    public class DashboardPage
     {
-        private readonly LocatorRepository _repo;
+        private readonly IWebDriver _driver;
+        private readonly SmartWait _wait;
 
-        public DashboardPage(IWebDriver driver) : base(driver)
+        public DashboardPage(IWebDriver driver)
         {
-            _repo = new LocatorRepository("Locators/Locators.txt");
+            _driver = driver;
+            _wait = new SmartWait(driver);
         }
 
-        public void WaitForDashboardReady()
+        public bool IsPageReady()
         {
-            Wait.UntilVisible(_repo.GetBy("Dashboard.PageReady"));
+            return _wait.UntilPresent(By.CssSelector("header"), 15);
         }
 
         public void DismissPopupsIfPresent()
         {
-            // Contact Update Popup
-            if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactPopup")))
+            // Contact Update popup
+            if (_wait.UntilPresent(By.CssSelector("mat-dialog-container"), 2))
             {
-                if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactUpdateLater")))
+                if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Update Later']"), 1))
                 {
-                    Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"));
+                    _wait.UntilClickable(By.XPath("//button[normalize-space()='Update Later']")).Click();
                 }
-                else if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactContinue")))
+                else if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Continue']"), 1))
                 {
-                    Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
+                    _wait.UntilClickable(By.XPath("//button[normalize-space()='Continue']")).Click();
                 }
             }
             // Chatbot iframe
             try
             {
-                var iframe = Driver.FindElements(_repo.GetBy("Chatbot.Iframe"));
-                if (iframe.Count > 0)
+                var iframes = _driver.FindElements(By.Id("servisbot-messenger-iframe-roundel"));
+                if (iframes.Count > 0)
                 {
-                    ((IJavaScriptExecutor)Driver).ExecuteScript(
-                        "arguments[0].style.display='none'; arguments[0].style.visibility='hidden';", iframe[0]);
+                    ((IJavaScriptExecutor)_driver).ExecuteScript(
+                        "arguments[0].style.display='none'; arguments[0].style.visibility='hidden';", iframes[0]);
                 }
             }
             catch { }
@@ -48,14 +49,30 @@ namespace WebAutomation.Tests.Pages
 
         public void SelectLoanAccount(string loanNumber)
         {
-            Driver.FindElement(_repo.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilVisible(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber));
-            Driver.FindElement(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            _wait.UntilClickable(By.CssSelector("button[logaction='Open Loan Selection Window']")).Click();
+            _wait.UntilClickable(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]")).Click();
+        }
+
+        public bool IsLoanDetailsLoaded(string loanNumber)
+        {
+            // Assume loan details section contains the loan number
+            return _wait.UntilPresent(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]"), 10);
         }
 
         public void ClickMakePayment()
         {
-            Wait.UntilClickable(_repo.GetBy("Dashboard.MakePayment.Button")).Click();
+            _wait.UntilClickable(By.CssSelector("p.make-payment")).Click();
+        }
+
+        public void ContinueScheduledPaymentIfPresent()
+        {
+            if (_wait.UntilPresent(By.CssSelector("mat-dialog-container"), 2))
+            {
+                if (_wait.UntilPresent(By.XPath("//button[normalize-space()='Continue']"), 1))
+                {
+                    _wait.UntilClickable(By.XPath("//button[normalize-space()='Continue']")).Click();
+                }
+            }
         }
     }
 }

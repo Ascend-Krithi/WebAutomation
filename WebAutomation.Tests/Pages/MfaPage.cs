@@ -1,29 +1,42 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
-using WebAutomation.Core.Configuration;
-using System.Threading;
+using WebAutomation.Core.Utilities;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class MfaPage : BasePage
+    public class MfaPage
     {
-        private readonly LocatorRepository _repo;
+        private readonly IWebDriver _driver;
+        private readonly SmartWait _wait;
 
-        public MfaPage(IWebDriver driver) : base(driver)
+        public MfaPage(IWebDriver driver)
         {
-            _repo = new LocatorRepository("Locators/Locators.txt");
+            _driver = driver;
+            _wait = new SmartWait(driver);
+        }
+
+        public bool IsPageReady()
+        {
+            return _wait.UntilPresent(By.CssSelector("mat-dialog-container"), 10);
         }
 
         public void CompleteMfa()
         {
-            Wait.UntilVisible(_repo.GetBy("Mfa.Dialog"));
-            Driver.FindElement(_repo.GetBy("Mfa.EmailMethod.Select")).Click();
-            Driver.FindElement(_repo.GetBy("Mfa.SendCode.Button")).Click();
+            _wait.UntilClickable(By.CssSelector("mat-select[formcontrolname='email']")).Click();
+            // Select first email (assume always present)
+            _wait.UntilClickable(By.CssSelector("mat-option")).Click();
+            _wait.UntilClickable(By.XPath("//button[.//span[normalize-space()='Receive Code Via Email']]")).Click();
+        }
 
-            Wait.UntilVisible(_repo.GetBy("Otp.Code.Input"));
-            Driver.FindElement(_repo.GetBy("Otp.Code.Input")).SendKeys(ConfigManager.Settings.StaticOtp);
-            Driver.FindElement(_repo.GetBy("Otp.Verify.Button")).Click();
+        public bool IsOtpPageReady()
+        {
+            return _wait.UntilPresent(By.Id("otp"), 10);
+        }
+
+        public void EnterOtpAndVerify()
+        {
+            var otp = WebAutomation.Core.Configuration.ConfigManager.Settings.StaticOtp;
+            _wait.UntilVisible(By.Id("otp")).SendKeys(otp);
+            _wait.UntilClickable(By.Id("VerifyCodeBtn")).Click();
         }
     }
 }

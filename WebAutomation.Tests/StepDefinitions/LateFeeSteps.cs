@@ -1,11 +1,10 @@
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using TechTalk.SpecFlow;
-using OpenQA.Selenium;
-using WebAutomation.Tests.Pages;
 using WebAutomation.Core.Utilities;
-using WebAutomation.Core.Configuration;
+using WebAutomation.Tests.Pages;
+using OpenQA.Selenium;
 
 namespace WebAutomation.Tests.StepDefinitions
 {
@@ -13,8 +12,8 @@ namespace WebAutomation.Tests.StepDefinitions
     public class LateFeeSteps
     {
         private readonly ScenarioContext _scenarioContext;
-        private IWebDriver _driver;
         private Dictionary<string, string> _testData;
+        private IWebDriver _driver;
         private LoginPage _loginPage;
         private MfaPage _mfaPage;
         private DashboardPage _dashboardPage;
@@ -29,80 +28,88 @@ namespace WebAutomation.Tests.StepDefinitions
         public void GivenTheUserLaunchesTheCustomerServicingApplication()
         {
             _driver = _scenarioContext.Get<IWebDriver>("driver");
-            _driver.Navigate().GoToUrl(ConfigManager.Settings.BaseUrl);
             _loginPage = new LoginPage(_driver);
+            _mfaPage = new MfaPage(_driver);
+            _dashboardPage = new DashboardPage(_driver);
+            _paymentPage = new PaymentPage(_driver);
+
+            var baseUrl = WebAutomation.Core.Configuration.ConfigManager.Settings.BaseUrl;
+            _driver.Navigate().GoToUrl(baseUrl);
+            Assert.True(_loginPage.IsPageReady(), "Login page did not load successfully.");
         }
 
         [When(@"the user logs in with valid credentials")]
         public void WhenTheUserLogsInWithValidCredentials()
         {
             _loginPage.LoginWithDefaultCredentials();
-            _mfaPage = new MfaPage(_driver);
+            Assert.True(_mfaPage.IsPageReady(), "MFA page did not load after login.");
         }
 
-        [When(@"the user completes MFA verification")]
-        public void WhenTheUserCompletesMFAVerification()
+        [When(@"completes MFA verification")]
+        public void WhenCompletesMFAVerification()
         {
             _mfaPage.CompleteMfa();
+            Assert.True(_mfaPage.IsOtpPageReady(), "OTP page did not load after MFA.");
+            _mfaPage.EnterOtpAndVerify();
+            Assert.True(_dashboardPage.IsPageReady(), "Dashboard did not load after OTP verification.");
         }
 
-        [When(@"the user navigates to the dashboard")]
-        public void WhenTheUserNavigatesToTheDashboard()
+        [When(@"navigates to the dashboard")]
+        public void WhenNavigatesToTheDashboard()
         {
-            _dashboardPage = new DashboardPage(_driver);
-            _dashboardPage.WaitForDashboardReady();
+            Assert.True(_dashboardPage.IsPageReady(), "Dashboard page did not load.");
         }
 
-        [When(@"the user dismisses any pop-ups if present")]
-        public void WhenTheUserDismissesAnyPopUpsIfPresent()
+        [When(@"dismisses any pop-ups if present")]
+        public void WhenDismissesAnyPopupsIfPresent()
         {
             _dashboardPage.DismissPopupsIfPresent();
         }
 
-        [When(@"the user selects the applicable loan account")]
-        public void WhenTheUserSelectsTheApplicableLoanAccount(Table table)
+        [When(@"selects the applicable loan account")]
+        public void WhenSelectsTheApplicableLoanAccount()
         {
-            string testCaseId = table.Rows[0]["TestCaseId"];
-            _testData = ExcelReader.GetRow(
-                filePath: "LateFee/LateFee.xlsx",
-                sheetName: "Sheet1",
-                keyColumn: "TestCaseId",
-                keyValue: testCaseId
-            );
-            string loanNumber = _testData["LoanNumber"];
+            // Read test data
+            var featureFile = "LateFee/LateFee.xlsx";
+            var sheet = "Sheet1";
+            var testCaseId = _scenarioContext.ScenarioInfo.Arguments["TestCaseId"].ToString();
+            _testData = ExcelReader.GetRow(featureFile, sheet, "TestCaseId", testCaseId);
+
+            var loanNumber = _testData["LoanNumber"];
             _dashboardPage.SelectLoanAccount(loanNumber);
+            Assert.True(_dashboardPage.IsLoanDetailsLoaded(loanNumber), "Loan details did not load.");
         }
 
-        [When(@"the user clicks Make a Payment")]
-        public void WhenTheUserClicksMakeAPayment()
+        [When(@"clicks Make a Payment")]
+        public void WhenClicksMakeAPayment()
         {
             _dashboardPage.ClickMakePayment();
-            _paymentPage = new PaymentPage(_driver);
         }
 
-        [When(@"the user continues past any scheduled payment popup if present")]
-        public void WhenTheUserContinuesPastAnyScheduledPaymentPopupIfPresent()
+        [When(@"continues past scheduled payment popup if present")]
+        public void WhenContinuesPastScheduledPaymentPopupIfPresent()
         {
-            _paymentPage.ContinueScheduledPaymentIfPresent();
+            _dashboardPage.ContinueScheduledPaymentIfPresent();
+            Assert.True(_paymentPage.IsPageReady(), "Make a Payment page did not load.");
         }
 
-        [When(@"the user opens the payment date picker")]
-        public void WhenTheUserOpensThePaymentDatePicker()
+        [When(@"opens the payment date picker")]
+        public void WhenOpensThePaymentDatePicker()
         {
             _paymentPage.OpenDatePicker();
         }
 
-        [When(@"the user selects the payment date from test data")]
-        public void WhenTheUserSelectsThePaymentDateFromTestData()
+        [When(@"selects the payment date from test data")]
+        public void WhenSelectsThePaymentDateFromTestData()
         {
-            string paymentDate = _testData["PaymentDate"];
+            var paymentDate = _testData["PaymentDate"];
             _paymentPage.SelectPaymentDate(paymentDate);
         }
 
-        [Then(@"the late-fee message area should not be displayed")]
-        public void ThenTheLateFeeMessageAreaShouldNotBeDisplayed()
+        [Then(@"no late fee message is displayed")]
+        public void ThenNoLateFeeMessageIsDisplayed()
         {
-            Assert.False(_paymentPage.IsLateFeeMessageDisplayed(), "Late fee message should not be displayed.");
+            Assert.False(_paymentPage.IsLateFeeMessageDisplayed(), "Late fee message was displayed but should not be.");
         }
     }
 }
