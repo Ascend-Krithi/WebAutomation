@@ -15,16 +15,16 @@
         "Type": "css",
         "Value": "h1.dashboard-header"
     },
-    "Generic.Modal.Title": {
-        "Type": "css",
-        "Value": ".modal-title"
+    "Generic.Modal.CloseButton": {
+        "Type": "xpath",
+        "Value": "//div[@class='modal-content']//button[contains(@class, 'close')]"
     },
     "Generic.Dropdown.Option": {
         "Type": "xpath",
-        "Value": "//div[contains(@class, 'option') and text()='{0}']"
+        "Value": "//ul[contains(@class, 'dropdown-menu')]//a[text()='{0}']"
     },
     "Generic.Table.Row": {
         "Type": "xpath",
-        "Value": "//table/tbody/tr[contains(., '{0}')]"
+        "Value": "//table/tbody/tr[td[1] = '{0}']"
     }
 }

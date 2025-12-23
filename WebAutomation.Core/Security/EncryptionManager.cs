@@ -7,31 +7,24 @@ namespace WebAutomation.Core.Security
     {
         private const int KeySize = 256;
         private const int BlockSize = 128;
-        private const int IvSize = BlockSize / 8; // 16 bytes
 
-        // IMPORTANT: Replace with a secure key from environment variables or a secret manager.
-        // This key is for demonstration purposes only.
-        private static readonly byte[] Key = Encoding.UTF8.GetBytes("0123456789abcdef0123456789abcdef");
-
-        public static string Encrypt(string plainText)
+        public static string Encrypt(string plainText, string keyBase64, string ivBase64)
         {
+            var key = Convert.FromBase64String(keyBase64);
+            var iv = Convert.FromBase64String(ivBase64);
+
             using var aes = Aes.Create();
             aes.KeySize = KeySize;
             aes.BlockSize = BlockSize;
-            aes.Key = Key;
-            aes.GenerateIV(); // Generate a new IV for each encryption
+            aes.Key = key;
+            aes.IV = iv;
 
-            var iv = aes.IV;
+            var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
-            using var encryptor = aes.CreateEncryptor(aes.Key, iv);
             using var ms = new MemoryStream();
-
-            // Prepend IV to the ciphertext
-            ms.Write(iv, 0, iv.Length);
-
-            using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+            using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            using (var sw = new StreamWriter(cs))
             {
-                using var sw = new StreamWriter(cs);
                 sw.Write(plainText);
             }
 
@@ -40,25 +33,26 @@ namespace WebAutomation.Core.Security
 
         public static string Decrypt(string cipherText)
         {
-            var fullCipher = Convert.FromBase64String(cipherText);
+            // This is a placeholder. In a real scenario, the key and IV
+            // would be retrieved from a secure location (e.g., Azure Key Vault).
+            // For this example, we'll use hardcoded values.
+            // IMPORTANT: DO NOT use hardcoded keys in production.
+            const string keyBase64 = "your-secure-base64-encoded-256-bit-key-here"; // Replace with a real key
+            const string ivBase64 = "your-secure-base64-encoded-128-bit-iv-here";   // Replace with a real IV
+
+            var key = Convert.FromBase64String(keyBase64);
+            var iv = Convert.FromBase64String(ivBase64);
+            var buffer = Convert.FromBase64String(cipherText);
 
             using var aes = Aes.Create();
             aes.KeySize = KeySize;
             aes.BlockSize = BlockSize;
-            aes.Key = Key;
-
-            // Extract IV from the beginning of the ciphertext
-            var iv = new byte[IvSize];
-            Array.Copy(fullCipher, 0, iv, 0, iv.Length);
+            aes.Key = key;
             aes.IV = iv;
 
-            using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-            using var ms = new MemoryStream();
+            var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 
-            // Write the actual ciphertext (after the IV) to the memory stream
-            ms.Write(fullCipher, IvSize, fullCipher.Length - IvSize);
-            ms.Position = 0; // Reset stream position to the beginning
-
+            using var ms = new MemoryStream(buffer);
             using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
             using var sr = new StreamReader(cs);
 
