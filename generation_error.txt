@@ -1,0 +1,8 @@
+The mandatory knowledge base documents and reference implementation files are not present in the provided directory. Please provide access to the following files before I can generate compile-ready automated test scripts:
+- Framework Understanding Document.docx
+- Framework Rules.docx
+- Framework Core Files.txt
+- Locators.txt
+- Screen Flow Document.docx
+- Reference implementation files (Features, StepDefinitions, Pages)
+Without these, I cannot proceed as per the strict framework boundaries and override rules.
