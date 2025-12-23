@@ -1,18 +1,30 @@
 {
-    "LoginPage.Username": {
+    "Login.Username": {
         "Type": "id",
         "Value": "username"
     },
-    "LoginPage.Password": {
+    "Login.Password": {
         "Type": "id",
         "Value": "password"
     },
-    "LoginPage.LoginButton": {
+    "Login.Submit": {
         "Type": "css",
         "Value": "button[type='submit']"
     },
     "Dashboard.Header": {
         "Type": "css",
         "Value": "h1.dashboard-header"
+    },
+    "Generic.Modal.Title": {
+        "Type": "css",
+        "Value": ".modal-title"
+    },
+    "Generic.Dropdown.Option": {
+        "Type": "xpath",
+        "Value": "//div[contains(@class, 'option') and text()='{0}']"
+    },
+    "Generic.Table.Row": {
+        "Type": "xpath",
+        "Value": "//table/tbody/tr[contains(., '{0}')]"
     }
 }
