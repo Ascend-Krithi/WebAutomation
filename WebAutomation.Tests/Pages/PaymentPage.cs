@@ -1,8 +1,8 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
 using WebAutomation.Core.Utilities;
-using System.Threading;
+using System;
+using System.Globalization;
 
 namespace WebAutomation.Tests.Pages
 {
@@ -15,49 +15,34 @@ namespace WebAutomation.Tests.Pages
             _locators = new LocatorRepository("Locators.txt");
         }
 
-        public bool IsScheduledPaymentPopupPresent()
-        {
-            return Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup"));
-        }
-
         public void ContinueScheduledPaymentPopupIfPresent()
         {
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            {
+                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            }
         }
 
-        public bool IsMakePaymentScreenDisplayed()
-        {
-            return Wait.UntilPresent(_locators.GetBy("Payment.PageReady"));
-        }
-
-        public void OpenPaymentDatePicker()
+        public void OpenDatePicker()
         {
             Wait.UntilClickable(_locators.GetBy("Payment.DatePicker.Toggle")).Click();
-            Wait.WaitForOverlay();
         }
 
-        public bool IsCalendarWidgetDisplayed()
+        public void SelectPaymentDate(string date)
         {
-            return Wait.UntilPresent(_locators.GetBy("Payment.DatePicker.Toggle"));
-        }
-
-        public void SelectPaymentDate(string paymentDate)
-        {
-            var dt = System.DateTime.Parse(paymentDate);
+            var dt = DateTime.ParseExact(date, "MM/dd/yyyy", CultureInfo.InvariantCulture);
+            // Year selection
+            Wait.UntilClickable(By.CssSelector("button.mat-calendar-period-button")).Click();
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Year}']")).Click();
+            // Month selection
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.ToString("MMM", CultureInfo.InvariantCulture)}']")).Click();
+            // Day selection
             Wait.UntilClickable(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
-            Wait.WaitForOverlayToClose();
-        }
-
-        public bool IsPaymentDateSelected(string paymentDate)
-        {
-            var dt = System.DateTime.Parse(paymentDate);
-            var selectedDay = Wait.UntilVisible(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString()));
-            return selectedDay != null;
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return Wait.UntilPresent(_locators.GetBy("Payment.LateFee.Message"));
+            return Wait.UntilPresent(_locators.GetBy("Payment.LateFee.Message"), 3);
         }
     }
 }

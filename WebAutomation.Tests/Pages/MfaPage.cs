@@ -1,27 +1,30 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Locators;
-using WebAutomation.Core.Pages;
+using WebAutomation.Core.Utilities;
+using WebAutomation.Core.Configuration;
 
 namespace WebAutomation.Tests.Pages
 {
     public class MfaPage : BasePage
     {
-        private readonly LocatorRepository _repo = new LocatorRepository("Locators.txt");
+        private readonly LocatorRepository _locators;
 
-        public MfaPage(IWebDriver driver) : base(driver) { }
-
-        public bool IsDialogDisplayed()
+        public MfaPage(IWebDriver driver) : base(driver)
         {
-            return Wait.UntilPresent(_repo.GetBy("Mfa.Dialog"));
+            _locators = new LocatorRepository("Locators.txt");
         }
 
-        public void SelectFirstEmailAndSendCode()
+        public bool IsDialogPresent()
         {
-            var select = Driver.FindElement(_repo.GetBy("Mfa.EmailMethod.Select"));
-            select.Click();
-            select.SendKeys(Keys.ArrowDown);
-            select.SendKeys(Keys.Enter);
-            Driver.FindElement(_repo.GetBy("Mfa.SendCode.Button")).Click();
+            return Wait.UntilPresent(_locators.GetBy("Mfa.Dialog"));
+        }
+
+        public void CompleteMfa()
+        {
+            Wait.UntilClickable(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
+            Wait.UntilClickable(_locators.GetBy("Mfa.SendCode.Button")).Click();
+            Wait.UntilVisible(_locators.GetBy("Otp.Code.Input")).SendKeys(ConfigManager.Settings.StaticOtp);
+            Wait.UntilClickable(_locators.GetBy("Otp.Verify.Button")).Click();
         }
     }
 }

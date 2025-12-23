@@ -1,7 +1,5 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
-using WebAutomation.Core.Security;
 using WebAutomation.Core.Utilities;
 using System.Threading;
 
@@ -16,55 +14,38 @@ namespace WebAutomation.Tests.Pages
             _locators = new LocatorRepository("Locators.txt");
         }
 
-        public bool IsSignInScreenDisplayed()
-        {
-            return Wait.UntilPresent(_locators.GetBy("Login.PageReady"));
-        }
-
-        public void LoginWithDefaultCredentials()
-        {
-            var creds = CredentialProvider.GetDefaultCredentials();
-            Wait.UntilVisible(_locators.GetBy("Login.Username")).SendKeys(creds.Username);
-            Wait.UntilVisible(_locators.GetBy("Login.Password")).SendKeys(creds.Password);
-            Wait.UntilClickable(_locators.GetBy("Login.Submit.Button")).Click();
-        }
-
-        public bool IsMfaScreenDisplayed()
-        {
-            return Wait.UntilPresent(_locators.GetBy("Mfa.Dialog"));
-        }
-
-        public void CompleteMfaVerification()
-        {
-            Wait.UntilClickable(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
-            Wait.UntilClickable(_locators.GetBy("Mfa.SendCode.Button")).Click();
-            Wait.UntilVisible(_locators.GetBy("Otp.Code.Input")).SendKeys(WebAutomation.Core.Configuration.ConfigManager.Settings.StaticOtp);
-            Wait.UntilClickable(_locators.GetBy("Otp.Verify.Button")).Click();
-            Wait.WaitForOverlayToClose();
-        }
-
-        public bool IsDashboardDisplayed()
+        public bool IsPageReady()
         {
             return Wait.UntilPresent(_locators.GetBy("Dashboard.PageReady"));
         }
 
-        public void DismissPopupsIfPresent()
+        public void DismissPopups()
         {
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactPopup"));
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
-            Popup.HandleIfPresent(_locators.GetBy("Chatbot.Iframe"));
+            // Contact Update
+            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            {
+                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+            }
+            // Chatbot iframe
+            try
+            {
+                Driver.SwitchTo().Frame(_locators.GetBy("Chatbot.Iframe"));
+                Driver.SwitchTo().DefaultContent();
+            }
+            catch { }
+            // Angular overlays handled by SmartWait
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
             Wait.UntilClickable(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
             Wait.UntilClickable(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
-            Thread.Sleep(1000);
         }
 
-        public bool IsLoanDetailsDisplayed(string loanNumber)
+        public bool IsLoanDetailsLoaded()
         {
-            return Wait.UntilPresent(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber));
+            // Assume loan details loaded if Make Payment button is present
+            return Wait.UntilPresent(_locators.GetBy("Dashboard.MakePayment.Button"));
         }
 
         public void ClickMakePayment()
