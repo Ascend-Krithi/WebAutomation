@@ -1,30 +1,31 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Security;
 using WebAutomation.Core.Locators;
-using WebAutomation.Core.Utilities;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class LoginPage : BasePage
+    public class LoginPage
     {
+        private readonly IWebDriver _driver;
         private readonly LocatorRepository _locators;
 
-        public LoginPage(IWebDriver driver) : base(driver)
+        public LoginPage(IWebDriver driver)
         {
+            _driver = driver;
             _locators = new LocatorRepository("Locators.txt");
         }
 
         public bool IsPageReady()
         {
-            return Wait.UntilPresent(_locators.GetBy("Login.PageReady"));
+            return _driver.FindElements(_locators.GetBy("Login.PageReady")).Count > 0;
         }
 
         public void LoginWithDefaultCredentials()
         {
-            var creds = CredentialProvider.GetDefaultCredentials();
-            Driver.FindElement(_locators.GetBy("Login.Username")).SendKeys(creds.Username);
-            Driver.FindElement(_locators.GetBy("Login.Password")).SendKeys(creds.Password);
-            Driver.FindElement(_locators.GetBy("Login.Submit.Button")).Click();
+            var (username, password) = CredentialProvider.GetDefaultCredentials();
+            _driver.FindElement(_locators.GetBy("Login.Username")).SendKeys(username);
+            _driver.FindElement(_locators.GetBy("Login.Password")).SendKeys(password);
+            _driver.FindElement(_locators.GetBy("Login.Submit.Button")).Click();
         }
     }
 }

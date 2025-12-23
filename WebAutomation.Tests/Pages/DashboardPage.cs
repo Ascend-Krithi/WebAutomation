@@ -1,56 +1,67 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Locators;
-using WebAutomation.Core.Utilities;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class DashboardPage : BasePage
+    public class DashboardPage
     {
+        private readonly IWebDriver _driver;
         private readonly LocatorRepository _locators;
 
-        public DashboardPage(IWebDriver driver) : base(driver)
+        public DashboardPage(IWebDriver driver)
         {
+            _driver = driver;
             _locators = new LocatorRepository("Locators.txt");
         }
 
         public bool IsPageReady()
         {
-            return Wait.UntilPresent(_locators.GetBy("Dashboard.PageReady"));
+            return _driver.FindElements(_locators.GetBy("Dashboard.PageReady")).Count > 0;
         }
 
-        public void DismissPopups()
+        public void DismissAllPopups()
         {
             // Contact Update
-            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            if (_driver.FindElements(_locators.GetBy("Dashboard.ContactPopup")).Count > 0)
             {
-                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+                if (_driver.FindElements(_locators.GetBy("Dashboard.ContactUpdateLater")).Count > 0)
+                {
+                    _driver.FindElement(_locators.GetBy("Dashboard.ContactUpdateLater")).Click();
+                }
+                else if (_driver.FindElements(_locators.GetBy("Dashboard.ContactContinue")).Count > 0)
+                {
+                    _driver.FindElement(_locators.GetBy("Dashboard.ContactContinue")).Click();
+                }
             }
             // Chatbot iframe
-            try
+            if (_driver.FindElements(_locators.GetBy("Chatbot.Iframe")).Count > 0)
             {
-                Driver.SwitchTo().Frame(_locators.GetBy("Chatbot.Iframe"));
-                Driver.SwitchTo().DefaultContent();
+                try
+                {
+                    ((IJavaScriptExecutor)_driver).ExecuteScript("document.getElementById('servisbot-messenger-iframe-roundel').style.display='none';");
+                }
+                catch { }
             }
-            catch { }
-            // Angular overlays handled by SmartWait
+            // Angular overlays
+            Thread.Sleep(500);
         }
 
-        public void SelectLoanAccount(string loanNumber)
+        public void SelectLoanByAccount(string loanNumber)
         {
-            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            _driver.FindElement(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
+            _driver.FindElement(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
         }
 
-        public bool IsLoanDetailsLoaded()
+        public bool AreLoanDetailsVisible()
         {
-            // Assume loan details loaded if Make Payment button is present
-            return Wait.UntilPresent(_locators.GetBy("Dashboard.MakePayment.Button"));
+            // Assume loan details are visible if Make Payment button is present
+            return _driver.FindElements(_locators.GetBy("Dashboard.MakePayment.Button")).Count > 0;
         }
 
         public void ClickMakePayment()
         {
-            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
+            _driver.FindElement(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
         }
     }
 }

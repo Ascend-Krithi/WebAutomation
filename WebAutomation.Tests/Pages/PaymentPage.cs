@@ -1,48 +1,59 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Locators;
-using WebAutomation.Core.Utilities;
 using System;
 using System.Globalization;
+using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class PaymentPage : BasePage
+    public class PaymentPage
     {
+        private readonly IWebDriver _driver;
         private readonly LocatorRepository _locators;
 
-        public PaymentPage(IWebDriver driver) : base(driver)
+        public PaymentPage(IWebDriver driver)
         {
+            _driver = driver;
             _locators = new LocatorRepository("Locators.txt");
         }
 
         public void ContinueScheduledPaymentPopupIfPresent()
         {
-            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            var continueButtons = _driver.FindElements(_locators.GetBy("Dashboard.ContactContinue"));
+            if (continueButtons.Count > 0)
             {
-                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+                continueButtons[0].Click();
             }
         }
 
         public void OpenDatePicker()
         {
-            Wait.UntilClickable(_locators.GetBy("Payment.DatePicker.Toggle")).Click();
+            _driver.FindElement(_locators.GetBy("Payment.DatePicker.Toggle")).Click();
+            Thread.Sleep(500);
         }
 
         public void SelectPaymentDate(string date)
         {
-            var dt = DateTime.ParseExact(date, "MM/dd/yyyy", CultureInfo.InvariantCulture);
-            // Year selection
-            Wait.UntilClickable(By.CssSelector("button.mat-calendar-period-button")).Click();
-            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Year}']")).Click();
-            // Month selection
-            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.ToString("MMM", CultureInfo.InvariantCulture)}']")).Click();
-            // Day selection
-            Wait.UntilClickable(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            DateTime dt = DateTime.ParseExact(date, "MM/dd/yyyy", CultureInfo.InvariantCulture);
+            // Open date picker if not already open
+            if (_driver.FindElements(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Count == 0)
+            {
+                OpenDatePicker();
+            }
+            _driver.FindElement(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            Thread.Sleep(500);
+        }
+
+        public bool IsPaymentDateDisplayed(string date)
+        {
+            // Assume the date field is an input with the selected value
+            var input = _driver.FindElement(By.CssSelector("input[formcontrolname='paymentDate']"));
+            return input.GetAttribute("value").Contains(date);
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return Wait.UntilPresent(_locators.GetBy("Payment.LateFee.Message"), 3);
+            return _driver.FindElements(_locators.GetBy("Payment.LateFee.Message")).Count > 0;
         }
     }
 }
