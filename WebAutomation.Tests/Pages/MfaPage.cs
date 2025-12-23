@@ -1,42 +1,27 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Utilities;
+using WebAutomation.Core.Locators;
+using WebAutomation.Core.Pages;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class MfaPage
+    public class MfaPage : BasePage
     {
-        private readonly IWebDriver _driver;
-        private readonly SmartWait _wait;
+        private readonly LocatorRepository _repo = new LocatorRepository("Locators.txt");
 
-        public MfaPage(IWebDriver driver)
+        public MfaPage(IWebDriver driver) : base(driver) { }
+
+        public bool IsDialogDisplayed()
         {
-            _driver = driver;
-            _wait = new SmartWait(driver);
+            return Wait.UntilPresent(_repo.GetBy("Mfa.Dialog"));
         }
 
-        public bool IsPageReady()
+        public void SelectFirstEmailAndSendCode()
         {
-            return _wait.UntilPresent(By.CssSelector("mat-dialog-container"), 10);
-        }
-
-        public void CompleteMfa()
-        {
-            _wait.UntilClickable(By.CssSelector("mat-select[formcontrolname='email']")).Click();
-            // Select first email (assume always present)
-            _wait.UntilClickable(By.CssSelector("mat-option")).Click();
-            _wait.UntilClickable(By.XPath("//button[.//span[normalize-space()='Receive Code Via Email']]")).Click();
-        }
-
-        public bool IsOtpPageReady()
-        {
-            return _wait.UntilPresent(By.Id("otp"), 10);
-        }
-
-        public void EnterOtpAndVerify()
-        {
-            var otp = WebAutomation.Core.Configuration.ConfigManager.Settings.StaticOtp;
-            _wait.UntilVisible(By.Id("otp")).SendKeys(otp);
-            _wait.UntilClickable(By.Id("VerifyCodeBtn")).Click();
+            var select = Driver.FindElement(_repo.GetBy("Mfa.EmailMethod.Select"));
+            select.Click();
+            select.SendKeys(Keys.ArrowDown);
+            select.SendKeys(Keys.Enter);
+            Driver.FindElement(_repo.GetBy("Mfa.SendCode.Button")).Click();
         }
     }
 }

@@ -1,45 +1,41 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Utilities;
-using System;
-using System.Globalization;
+using WebAutomation.Core.Locators;
+using WebAutomation.Core.Pages;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
-    public class PaymentPage
+    public class PaymentPage : BasePage
     {
-        private readonly IWebDriver _driver;
-        private readonly SmartWait _wait;
+        private readonly LocatorRepository _repo = new LocatorRepository("Locators.txt");
 
-        public PaymentPage(IWebDriver driver)
-        {
-            _driver = driver;
-            _wait = new SmartWait(driver);
-        }
+        public PaymentPage(IWebDriver driver) : base(driver) { }
 
-        public bool IsPageReady()
+        public void ContinueScheduledPaymentPopupIfPresent()
         {
-            // Use a unique element on the Make a Payment page
-            return _wait.UntilPresent(By.CssSelector("span"), 10);
+            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
         }
 
         public void OpenDatePicker()
         {
-            _wait.UntilClickable(By.CssSelector("mat-datepicker-toggle button")).Click();
-            _wait.WaitForOverlay();
+            Driver.FindElement(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            Wait.WaitForOverlay();
         }
 
         public void SelectPaymentDate(string date)
         {
-            var dt = DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-            // Assumes calendar is already open
-            _wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and normalize-space(text())='{dt.Day}']")).Click();
-            _wait.WaitForOverlayToClose();
+            var dt = DateTime.ParseExact(date, "MM/dd/yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            // Defensive: open picker if not already open
+            if (!Driver.FindElement(_repo.GetBy("Payment.DatePicker.Toggle")).Displayed)
+                Driver.FindElement(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            // Select day
+            Driver.FindElement(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            Wait.WaitForOverlayToClose();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return _wait.UntilPresent(By.Id("latefeeInfoMsg1"), 2);
+            return Driver.FindElements(_repo.GetBy("Payment.LateFee.Message")).Count > 0;
         }
     }
 }
