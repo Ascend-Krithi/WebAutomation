@@ -1,35 +1,20 @@
-Feature: HELOC Late Fee Message
+Feature: HELOC Late Fee Message Validation
 
-  Scenario Outline: No late fee message is displayed for payment date <15 days past due
+  Scenario Outline: Validate late fee message for HELOC loan payment date
     Given the user launches the customer servicing application
     And logs in with valid credentials
     And completes MFA verification
-    And navigates to the dashboard
-    And dismisses any pop-ups if present
-    And selects the applicable loan account "<LoanNumber>"
-    And clicks Make a Payment
-    And continues past the scheduled payment popup if it appears
+    And the dashboard is displayed
+    And all pop-ups are dismissed if present
+    And the user selects the applicable loan account
+    When the user clicks Make a Payment
+    And continues past any scheduled payment popup if present
     And opens the payment date picker
-    When the user selects the payment date "<PaymentDate>"
-    Then no late fee message is displayed
+    And selects the payment date from test data
+    Then the late fee message area should <LateFeeMessageExpectation>
 
     Examples:
-      | TestCaseId              | LoanNumber | PaymentDate | 
-      | HAP-700 TS-001 TC-001   | <LoanNum1> | <Date1>     |
-
-  Scenario Outline: Late fee message is displayed for payment date >15 days past due
-    Given the user launches the customer servicing application
-    And logs in with valid credentials
-    And completes MFA verification
-    And navigates to the dashboard
-    And dismisses any pop-ups if present
-    And selects the applicable loan account "<LoanNumber>"
-    And clicks Make a Payment
-    And continues past the scheduled payment popup if it appears
-    And opens the payment date picker
-    When the user selects the payment date "<PaymentDate>"
-    Then a late fee message is displayed
-
-    Examples:
-      | TestCaseId              | LoanNumber | PaymentDate | 
-      | HAP-700 TS-001 TC-002   | <LoanNum2> | <Date2>     |
+      | TestCaseId             | LateFeeMessageExpectation |
+      | HAP-700 TS-001 TC-001  | not be displayed         |
+      | HAP-700 TS-001 TC-002  | be displayed             |
+      | HAP-700 TS-001 TC-003  | not be displayed         |
