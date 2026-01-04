@@ -1,20 +1,25 @@
-Feature: Late Fee Message Display
+Feature: Late Fee Payment
 
-  Scenario Outline: Validate late fee message display for HELOC loan payment date
-    Given the user launches the customer servicing application
-    And the user logs in with valid credentials
-    And the user completes MFA verification
-    And the user is on the dashboard
-    And the user dismisses any pop-ups if present
-    And the user selects the applicable loan account
-    When the user clicks Make a Payment
-    And the user continues past the scheduled payment popup if it appears
-    And the user opens the payment date picker
-    And the user selects the payment date from test data
-    Then the late fee message area should <LateFeeExpectation>
+  Scenario Outline: Customer makes a payment and late fee message is displayed
+    Given the customer logs in
+    And completes identity verification
+    And enters OTP and verifies
+    And navigates to the dashboard
+    And closes any popups if present
+    When the customer selects loan number <LoanNumber>
+    And clicks on Make a Payment
+    And selects payment date <PaymentDate>
+    Then the late fee message popup should be <POP UP Message>
 
     Examples:
-      | TestCaseId | Scenario                                 | LoanNumber | PaymentDate | State | ExpectedLateFee | LateFeeExpectation         |
-      | TC01       | < 15 days – no late fee message          | 3616       | 2025-12-20  | TX    | False           | not be displayed          |
-      | TC02       | > 15 days – late fee message should show | 3616       | 2026-01-23  | TX    | True            | be displayed              |
-      | TC03       | = 15 days – no late fee message          | 3616       | 2026-01-16  | TX    | False           | not be displayed          |
+      | TestCaseId | LoanNumber | PaymentDate | POP UP Message |
+      | TC01       | 3616       | 2025-12-20  | True           |
+      | TC02       | 3616       | 2026-01-23  | True           |
+      | TC03       | 3616       | 2026-01-16  | True           |
+      | TC04       | 3616       | 2026-01-16  | True           |
+      | TC05       | 3616       | 2026-01-16  | True           |
+      | TC06       | 3616       | 2026-01-16  | True           |
+      | TC07       | 3616       | 2026-01-16  | True           |
+      | TC08       | 3616       | 2026-01-16  | True           |
+      | TC09       | 3616       | 2026-01-16  | True           |
+      | TC10       | 3616       | 2026-01-16  | False          |

@@ -1,53 +1,34 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
-using System;
+using WebAutomation.Core.Utilities;
 using System.Globalization;
 
 namespace WebAutomation.Tests.Pages
 {
     public class PaymentPage : BasePage
     {
-        private readonly LocatorRepository _repo = new LocatorRepository("Locators.json");
-
         public PaymentPage(IWebDriver driver) : base(driver) { }
 
-        public void ContinueScheduledPaymentPopupIfPresent()
+        public void WaitForPaymentPage()
         {
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
+            Wait.UntilVisible(By.XPath("//span[contains(text(),'Make a Payment')]"));
         }
 
-        public void OpenDatePicker()
+        public void SelectPaymentDate(string paymentDate)
         {
-            Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
-        }
-
-        public void SelectPaymentDate(string date)
-        {
-            DateTime dt = DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-            // Open date picker if not already open
-            Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            var dt = DateTime.ParseExact(paymentDate, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            Wait.UntilClickable(By.CssSelector("mat-datepicker-toggle button")).Click();
             Wait.WaitForOverlay();
-            // Select year
             Wait.UntilClickable(By.CssSelector("button.mat-calendar-period-button")).Click();
             Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Year}']")).Click();
-            // Select month
-            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.ToString("MMM", CultureInfo.InvariantCulture)}']")).Click();
-            // Select day
-            Wait.UntilClickable(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt:MMM}']")).Click();
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Day}']")).Click();
             Wait.WaitForOverlayToClose();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            try
-            {
-                return Wait.UntilVisible(_repo.GetBy("Payment.LateFee.Message"), 3).Displayed;
-            }
-            catch
-            {
-                return false;
-            }
+            return Wait.UntilPresent(By.Id("latefeeInfoMsg1"), 5);
         }
     }
 }

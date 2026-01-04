@@ -1,39 +1,38 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
-        private readonly LocatorRepository _repo = new LocatorRepository("Locators.json");
-
         public DashboardPage(IWebDriver driver) : base(driver) { }
 
         public void WaitForDashboard()
         {
-            Wait.UntilVisible(_repo.GetBy("Dashboard.PageReady"));
+            Wait.UntilVisible(By.CssSelector("header"));
         }
 
-        public void DismissPopups()
+        public void ClosePopupsIfPresent()
         {
-            // Contact Update
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"));
-            // Chatbot iframe is handled by framework
-            // Scheduled Payment
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
+            // Contact Info Update Popup
+            if (Popup.IsPresent(By.CssSelector("mat-dialog-container")))
+            {
+                Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Update Later']"));
+                Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Continue']"));
+            }
+            // Chatbot iframe handled by framework
         }
 
-        public void SelectLoanAccount(string loanNumber)
+        public void SelectLoanCard(string loanNumber)
         {
-            Wait.UntilClickable(_repo.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilClickable(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            Wait.UntilClickable(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]")).Click();
         }
 
         public void ClickMakePayment()
         {
-            Wait.UntilClickable(_repo.GetBy("Dashboard.MakePayment.Button")).Click();
+            Wait.UntilClickable(By.CssSelector("p.make-payment")).Click();
+            Thread.Sleep(1000); // Defensive wait for overlay
         }
     }
 }
