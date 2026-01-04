@@ -1,25 +1,39 @@
-Feature: Late Fee Payment
+Feature: Late Fee and Autopay Pending OTP Pop-up Handling
 
-  Scenario Outline: Customer makes a payment and late fee message is displayed
-    Given the customer logs in
-    And completes identity verification
-    And enters OTP and verifies
-    And navigates to the dashboard
-    And closes any popups if present
-    When the customer selects loan number <LoanNumber>
-    And clicks on Make a Payment
-    And selects payment date <PaymentDate>
-    Then the late fee message popup should be <POP UP Message>
+  Scenario Outline: Customer with pending OTP sees pop-up on Make a Payment and Setup Autopay actions
+    Given the Customer Portal is launched
+    And the user logs in with valid credentials for TestCaseId "<TestCaseId>"
+    When the user navigates to the Account Dashboard
+    And the user clicks on "<Action>"
+    Then a pop-up with 'Continue' and 'Cancel' is displayed
 
     Examples:
-      | TestCaseId | LoanNumber | PaymentDate | POP UP Message |
-      | TC01       | 3616       | 2025-12-20  | True           |
-      | TC02       | 3616       | 2026-01-23  | True           |
-      | TC03       | 3616       | 2026-01-16  | True           |
-      | TC04       | 3616       | 2026-01-16  | True           |
-      | TC05       | 3616       | 2026-01-16  | True           |
-      | TC06       | 3616       | 2026-01-16  | True           |
-      | TC07       | 3616       | 2026-01-16  | True           |
-      | TC08       | 3616       | 2026-01-16  | True           |
-      | TC09       | 3616       | 2026-01-16  | True           |
-      | TC10       | 3616       | 2026-01-16  | False          |
+      | TestCaseId | Action           |
+      | TC01       | Make a Payment   |
+      | TC07       | Setup Autopay    |
+
+  Scenario Outline: Customer clicks Continue on pop-up and is routed to the correct page
+    Given the Customer Portal is launched
+    And the user logs in with valid credentials for TestCaseId "<TestCaseId>"
+    When the user navigates to the Account Dashboard
+    And the user clicks on "<Action>"
+    And the user clicks 'Continue' on the pop-up
+    Then the user is routed to the "<ExpectedPage>" page
+
+    Examples:
+      | TestCaseId | Action           | ExpectedPage      |
+      | TC02       | Make a Payment   | Make a Payment    |
+      | TC08       | Setup Autopay    | Setup Autopay     |
+
+  Scenario Outline: Customer clicks Cancel on pop-up and remains on Dashboard
+    Given the Customer Portal is launched
+    And the user logs in with valid credentials for TestCaseId "<TestCaseId>"
+    When the user navigates to the Account Dashboard
+    And the user clicks on "<Action>"
+    And the user clicks 'Cancel' on the pop-up
+    Then the pop-up is dismissed and user remains on Account Dashboard
+
+    Examples:
+      | TestCaseId | Action           |
+      | TC03       | Make a Payment   |
+      | TC09       | Setup Autopay    |

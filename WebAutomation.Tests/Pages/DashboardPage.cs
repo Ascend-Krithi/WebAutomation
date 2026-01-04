@@ -8,31 +8,21 @@ namespace WebAutomation.Tests.Pages
     {
         public DashboardPage(IWebDriver driver) : base(driver) { }
 
-        public void WaitForDashboard()
+        public bool IsLoaded()
         {
-            Wait.UntilVisible(By.CssSelector("header"));
+            return Driver.FindElements(By.XPath("//h1[contains(text(),'Dashboard')]")).Count > 0;
         }
 
-        public void ClosePopupsIfPresent()
+        public void ClickMakeAPayment()
         {
-            // Contact Info Update Popup
-            if (Popup.IsPresent(By.CssSelector("mat-dialog-container")))
-            {
-                Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Update Later']"));
-                Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Continue']"));
-            }
-            // Chatbot iframe handled by framework
+            Driver.FindElement(By.XPath("//span[contains(text(),'Make a Payment')]")).Click();
+            Thread.Sleep(1000);
         }
 
-        public void SelectLoanCard(string loanNumber)
+        public void ClickSetupAutopay()
         {
-            Wait.UntilClickable(By.XPath($"//p[contains(normalize-space(.),'Account - {loanNumber}')]")).Click();
-        }
-
-        public void ClickMakePayment()
-        {
-            Wait.UntilClickable(By.CssSelector("p.make-payment")).Click();
-            Thread.Sleep(1000); // Defensive wait for overlay
+            Driver.FindElement(By.XPath("//span[contains(text(),'Setup Autopay')]")).Click();
+            Thread.Sleep(1000);
         }
     }
 }

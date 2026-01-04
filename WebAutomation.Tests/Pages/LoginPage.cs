@@ -1,6 +1,5 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Security;
 
 namespace WebAutomation.Tests.Pages
 {
@@ -8,12 +7,11 @@ namespace WebAutomation.Tests.Pages
     {
         public LoginPage(IWebDriver driver) : base(driver) { }
 
-        public void LoginWithDefaultCredentials()
+        public void Login(string username, string password)
         {
-            var creds = CredentialProvider.GetDefaultCredentials();
-            Wait.UntilVisible(By.Id("email")).SendKeys(creds.Username);
-            Wait.UntilVisible(By.Id("password")).SendKeys(creds.Password);
-            Wait.UntilClickable(By.CssSelector("button[type='submit']")).Click();
+            Driver.FindElement(By.Id("username")).SendKeys(username);
+            Driver.FindElement(By.Id("password")).SendKeys(password);
+            Driver.FindElement(By.XPath("//button[contains(text(),'Sign in')]")).Click();
         }
     }
 }
