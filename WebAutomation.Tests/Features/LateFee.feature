@@ -1,39 +1,38 @@
-Feature: Late Fee and Autopay Pending OTP Pop-up Handling
+Feature: Late Fee and Payment Pop-up Handling
 
-  Scenario Outline: Customer with pending OTP sees pop-up on Make a Payment and Setup Autopay actions
+  Scenario Outline: Customer with pending OTP sees payment/autopay pop-up
     Given the Customer Portal is launched
-    And the user logs in with valid credentials for TestCaseId "<TestCaseId>"
-    When the user navigates to the Account Dashboard
-    And the user clicks on "<Action>"
-    Then a pop-up with 'Continue' and 'Cancel' is displayed
+    And the user logs in with credentials for a pending OTP account
+    And the user is on the Account Dashboard
+    When the user clicks "<Action>"
+    Then a pop-up with 'Continue' and 'Cancel' appears
 
     Examples:
-      | TestCaseId | Action           |
-      | TC01       | Make a Payment   |
-      | TC07       | Setup Autopay    |
+      | TestCaseId                | Action             |
+      | HAP-903 TS-001 TC-001     | Make a Payment     |
+      | HAP-903 TS-004 TC-001     | Setup Autopay      |
 
-  Scenario Outline: Customer clicks Continue on pop-up and is routed to the correct page
+  Scenario Outline: Customer clicks Continue on payment/autopay pop-up
     Given the Customer Portal is launched
-    And the user logs in with valid credentials for TestCaseId "<TestCaseId>"
-    When the user navigates to the Account Dashboard
-    And the user clicks on "<Action>"
+    And the user logs in with credentials for a pending OTP account
+    And the user is on the Account Dashboard
+    When the user clicks "<Action>"
     And the user clicks 'Continue' on the pop-up
     Then the user is routed to the "<ExpectedPage>" page
 
     Examples:
-      | TestCaseId | Action           | ExpectedPage      |
-      | TC02       | Make a Payment   | Make a Payment    |
-      | TC08       | Setup Autopay    | Setup Autopay     |
+      | TestCaseId                | Action             | ExpectedPage      |
+      | HAP-903 TS-002 TC-001     | Make a Payment     | Make a Payment    |
+      | HAP-903 TS-005 TC-001     | Setup Autopay      | Setup Autopay     |
 
-  Scenario Outline: Customer clicks Cancel on pop-up and remains on Dashboard
+  Scenario Outline: Customer clicks Cancel on payment/autopay pop-up
     Given the Customer Portal is launched
-    And the user logs in with valid credentials for TestCaseId "<TestCaseId>"
-    When the user navigates to the Account Dashboard
-    And the user clicks on "<Action>"
+    And the user logs in with credentials for a pending OTP account
+    And the user is on the Account Dashboard
+    When the user clicks "<Action>"
     And the user clicks 'Cancel' on the pop-up
     Then the pop-up is dismissed and user remains on Account Dashboard
 
     Examples:
-      | TestCaseId | Action           |
-      | TC03       | Make a Payment   |
-      | TC09       | Setup Autopay    |
+      | TestCaseId                | Action             |
+      | HAP-903 TS-003 TC-001     | Make a Payment     |
