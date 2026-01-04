@@ -1,29 +1,21 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Locators;
 using WebAutomation.Core.Pages;
+using WebAutomation.Core.Security;
+using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
     public class LoginPage : BasePage
     {
-        private readonly LocatorRepository _repo;
+        private readonly LocatorRepository _repo = new LocatorRepository("Locators.json");
 
-        public LoginPage(IWebDriver driver) : base(driver)
-        {
-            _repo = new LocatorRepository("Locators.txt");
-        }
+        public LoginPage(IWebDriver driver) : base(driver) { }
 
-        public void NavigateToLoginPage()
+        public void LoginWithDefaultCredentials()
         {
-            Driver.Navigate().GoToUrl(WebAutomation.Core.Configuration.ConfigManager.Settings.BaseUrl);
-            Wait.UntilVisible(_repo.GetBy("Login.PageReady"));
-        }
-
-        public void Login(string loanNumber, string state)
-        {
-            // For demo, using loanNumber as username and state as password
-            Wait.UntilVisible(_repo.GetBy("Login.Username")).SendKeys(loanNumber);
-            Wait.UntilVisible(_repo.GetBy("Login.Password")).SendKeys(state);
+            var (username, password) = CredentialProvider.GetDefaultCredentials();
+            Wait.UntilVisible(_repo.GetBy("Login.Username")).SendKeys(username);
+            Wait.UntilVisible(_repo.GetBy("Login.Password")).SendKeys(password);
             Wait.UntilClickable(_repo.GetBy("Login.Submit.Button")).Click();
         }
     }
