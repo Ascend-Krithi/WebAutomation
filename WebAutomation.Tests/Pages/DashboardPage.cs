@@ -1,49 +1,89 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
+using WebAutomation.Core.Utilities;
+using WebAutomation.Core.Security;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
-        private readonly LocatorRepository _repo;
+        private readonly LocatorRepository _locators;
 
-        public DashboardPage(IWebDriver driver) : base(driver)
+        public DashboardPage(IWebDriver driver)
+            : base(driver)
         {
-            _repo = new LocatorRepository("Locators.txt");
+            _locators = new LocatorRepository("Locators.txt");
         }
 
-        public void WaitForDashboard()
+        public bool IsLoginPageDisplayed()
         {
-            Wait.UntilVisible(_repo.GetBy("Dashboard.PageReady"));
+            return Wait.UntilPresent(_locators.GetBy("Login.PageReady"));
         }
 
-        public void DismissAllPopups()
+        public void Login(string username, string password)
         {
-            // Contact Update
-            if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactPopup")))
-            {
-                Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"));
-            }
-            // Chatbot iframe (handled by framework, but defensively here)
-            try
-            {
-                Driver.SwitchTo().Frame(_repo.GetBy("Chatbot.Iframe"));
-                Driver.SwitchTo().DefaultContent();
-            }
-            catch { }
+            Wait.UntilVisible(_locators.GetBy("Login.Username")).SendKeys(username);
+            Wait.UntilVisible(_locators.GetBy("Login.Password")).SendKeys(password);
+            Wait.UntilClickable(_locators.GetBy("Login.Submit.Button")).Click();
+
+            // MFA Page
+            Wait.UntilVisible(_locators.GetBy("Mfa.Dialog"));
+            Wait.UntilClickable(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
+            Wait.UntilClickable(_locators.GetBy("Mfa.SendCode.Button")).Click();
+
+            // OTP Page
+            var staticOtp = WebAutomation.Core.Configuration.ConfigManager.Settings.StaticOtp;
+            Wait.UntilVisible(_locators.GetBy("Otp.Code.Input")).SendKeys(staticOtp);
+            Wait.UntilClickable(_locators.GetBy("Otp.Verify.Button")).Click();
+
+            // Handle popups defensively
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
 
-        public void SelectLoanAccount(string loanNumber)
+        public bool IsDashboardDisplayed()
         {
-            Wait.UntilClickable(_repo.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilClickable(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            return Wait.UntilPresent(_locators.GetBy("Dashboard.PageReady"));
         }
 
         public void ClickMakePayment()
         {
-            Wait.UntilClickable(_repo.GetBy("Dashboard.MakePayment.Button")).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
+        }
+
+        public void ClickSetupAutopay()
+        {
+            // Assuming Setup Autopay button locator is similar to MakePayment, update if needed
+            Wait.UntilClickable(_locators.GetBy("Dashboard.SetupAutopay.Button")).Click();
+        }
+
+        public bool IsPendingOtpPopupDisplayed()
+        {
+            return Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup"));
+        }
+
+        public void ClickPopupContinue()
+        {
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+        }
+
+        public void ClickPopupCancel()
+        {
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+        }
+
+        public bool IsMakePaymentPageDisplayed()
+        {
+            // Use Payment.PageReady locator
+            return Wait.UntilPresent(_locators.GetBy("Payment.PageReady"));
+        }
+
+        public bool IsSetupAutopayPageDisplayed()
+        {
+            // Assuming Setup Autopay page has a unique locator, update if needed
+            return Wait.UntilPresent(_locators.GetBy("Autopay.PageReady"));
         }
     }
 }
