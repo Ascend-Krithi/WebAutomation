@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using TechTalk.SpecFlow;
+using OpenQA.Selenium;
+using WebAutomation.Core.Configuration;
 using WebAutomation.Core.Utilities;
 using WebAutomation.Tests.Pages;
-using OpenQA.Selenium;
 
 namespace WebAutomation.Tests.StepDefinitions
 {
@@ -11,103 +13,103 @@ namespace WebAutomation.Tests.StepDefinitions
     public class LateFeeSteps
     {
         private readonly ScenarioContext _scenarioContext;
+        private readonly string _excelPath;
+        private readonly string _sheetName = "Sheet1";
         private Dictionary<string, string> _testData;
         private IWebDriver _driver;
         private SmartWait _wait;
         private PopupHandler _popup;
-        private LoginPage _loginPage;
-        private DashboardPage _dashboardPage;
 
         public LateFeeSteps(ScenarioContext scenarioContext)
         {
             _scenarioContext = scenarioContext;
+            _excelPath = System.IO.Path.Combine(AppContext.BaseDirectory, "LateFee", "LateFee.xlsx");
         }
 
-        [Given(@"the Customer Portal is launched")]
-        public void GivenTheCustomerPortalIsLaunched()
+        [Given(@"the user launches the customer servicing application")]
+        public void GivenTheUserLaunchesTheCustomerServicingApplication()
         {
             _driver = _scenarioContext.Get<IWebDriver>("driver");
             _wait = _scenarioContext.Get<SmartWait>("wait");
             _popup = _scenarioContext.Get<PopupHandler>("popup");
-            _loginPage = new LoginPage(_driver);
-            _dashboardPage = new DashboardPage(_driver);
-
-            // Read test data
-            var testCaseId = _scenarioContext.ScenarioInfo.Arguments["TestCaseId"].ToString();
-            var testDataPath = ConfigManager.Settings.TestDataPath + "/LateFee/LateFee.xlsx";
-            _testData = ExcelReader.GetRow(testDataPath, "Sheet1", "TestCaseId", testCaseId);
-
-            var baseUrl = ConfigManager.Settings.BaseUrl;
-            _driver.Navigate().GoToUrl(baseUrl);
-            Assert.IsTrue(_loginPage.IsPageReady(), "Login page is not displayed.");
+            _driver.Navigate().GoToUrl(ConfigManager.Settings.BaseUrl);
+            _wait.UntilVisible(By.CssSelector("form"));
         }
 
-        [Given(@"the user logs in with credentials for a pending OTP account")]
-        public void GivenTheUserLogsInWithCredentialsForPendingOtpAccount()
+        [Given(@"logs in with valid credentials")]
+        public void GivenLogsInWithValidCredentials()
         {
-            var username = _testData.ContainsKey("Username") ? _testData["Username"] : "customer1";
-            var password = _testData.ContainsKey("Password") ? _testData["Password"] : "Pass@123";
-            _loginPage.Login(username, password);
-            _loginPage.HandleMfa();
-            _loginPage.EnterOtpAndVerify();
-            Assert.IsTrue(_dashboardPage.IsPageReady(), "Account Dashboard is not displayed.");
+            var loginPage = new LoginPage(_driver);
+            loginPage.LoginWithDefaultCredentials();
         }
 
-        [Given(@"the user is on the Account Dashboard")]
-        public void GivenTheUserIsOnTheAccountDashboard()
+        [Given(@"completes MFA verification")]
+        public void GivenCompletesMFAVerification()
         {
-            Assert.IsTrue(_dashboardPage.IsPageReady(), "Account Dashboard did not load successfully.");
+            var mfaPage = new MfaPage(_driver);
+            mfaPage.CompleteMfa();
         }
 
-        [When(@"the user clicks \"(.*)\"")]
-        public void WhenTheUserClicksAction(string action)
+        [Given(@"the dashboard is loaded")]
+        public void GivenTheDashboardIsLoaded()
         {
-            if (action == "Make a Payment")
-            {
-                _dashboardPage.ClickMakePayment();
-            }
-            else if (action == "Setup Autopay")
-            {
-                _dashboardPage.ClickSetupAutopay();
-            }
+            var dashboardPage = new DashboardPage(_driver);
+            dashboardPage.WaitForDashboard();
         }
 
-        [Then(@"a pop-up with 'Continue' and 'Cancel' appears")]
-        public void ThenAPopupWithContinueAndCancelAppears()
+        [Given(@"all pop-ups are dismissed")]
+        public void GivenAllPopupsAreDismissed()
         {
-            Assert.IsTrue(_dashboardPage.IsPaymentPopupPresent(), "Expected pop-up with 'Continue' and 'Cancel' did not appear.");
+            var dashboardPage = new DashboardPage(_driver);
+            dashboardPage.DismissAllPopups();
         }
 
-        [When(@"the user clicks 'Continue' on the pop-up")]
-        public void WhenTheUserClicksContinueOnThePopup()
+        [Given(@"the user selects the applicable loan account")]
+        public void GivenTheUserSelectsTheApplicableLoanAccount(Table table)
         {
-            _dashboardPage.ClickPopupContinue();
+            var testCaseId = table.Rows[0]["TestCaseId"];
+            _testData = ExcelReader.GetRow(_excelPath, _sheetName, "TestCaseId", testCaseId);
+            var dashboardPage = new DashboardPage(_driver);
+            dashboardPage.SelectLoanAccount(_testData["LoanNumber"]);
         }
 
-        [Then(@"the user is routed to the \"(.*)\" page")]
-        public void ThenTheUserIsRoutedToThePage(string expectedPage)
+        [When(@"the user clicks Make a Payment")]
+        public void WhenTheUserClicksMakeAPayment()
         {
-            if (expectedPage == "Make a Payment")
-            {
-                Assert.IsTrue(_dashboardPage.IsOnMakePaymentPage(), "User was not routed to the Make a Payment page.");
-            }
-            else if (expectedPage == "Setup Autopay")
-            {
-                Assert.IsTrue(_dashboardPage.IsOnSetupAutopayPage(), "User was not routed to the Setup Autopay page.");
-            }
+            var dashboardPage = new DashboardPage(_driver);
+            dashboardPage.ClickMakePayment();
         }
 
-        [When(@"the user clicks 'Cancel' on the pop-up")]
-        public void WhenTheUserClicksCancelOnThePopup()
+        [When(@"handles the scheduled payment popup if present")]
+        public void WhenHandlesTheScheduledPaymentPopupIfPresent()
         {
-            _dashboardPage.ClickPopupCancel();
+            var paymentPage = new PaymentPage(_driver);
+            paymentPage.HandleScheduledPaymentPopup();
         }
 
-        [Then(@"the pop-up is dismissed and user remains on Account Dashboard")]
-        public void ThenThePopupIsDismissedAndUserRemainsOnAccountDashboard()
+        [When(@"opens the payment date picker")]
+        public void WhenOpensThePaymentDatePicker()
         {
-            Assert.IsFalse(_dashboardPage.IsPaymentPopupPresent(), "Pop-up was not dismissed.");
-            Assert.IsTrue(_dashboardPage.IsPageReady(), "User is not on the Account Dashboard.");
+            var paymentPage = new PaymentPage(_driver);
+            paymentPage.OpenDatePicker();
+        }
+
+        [When(@"selects the payment date \"(.*)\"")]
+        public void WhenSelectsThePaymentDate(string paymentDate)
+        {
+            var paymentPage = new PaymentPage(_driver);
+            paymentPage.SelectPaymentDate(paymentDate);
+        }
+
+        [Then(@"the late fee message area should display late fee message: (.*)")]
+        public void ThenTheLateFeeMessageAreaShouldDisplayLateFeeMessage(bool expectedLateFee)
+        {
+            var paymentPage = new PaymentPage(_driver);
+            bool isLateFeeDisplayed = paymentPage.IsLateFeeMessageDisplayed();
+            if (expectedLateFee)
+                Assert.True(isLateFeeDisplayed, "Expected late fee message to be displayed, but it was not.");
+            else
+                Assert.False(isLateFeeDisplayed, "Expected no late fee message, but it was displayed.");
         }
     }
 }

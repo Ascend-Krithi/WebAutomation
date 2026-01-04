@@ -1,9 +1,7 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
-using WebAutomation.Core.Utilities;
 using WebAutomation.Core.Security;
-using System.Threading;
+using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
@@ -16,33 +14,12 @@ namespace WebAutomation.Tests.Pages
             _repo = new LocatorRepository("Locators.txt");
         }
 
-        public bool IsPageReady()
+        public void LoginWithDefaultCredentials()
         {
-            return Wait.UntilPresent(_repo.GetBy("Login.PageReady"));
-        }
-
-        public void Login(string username, string password)
-        {
-            Wait.UntilVisible(_repo.GetBy("Login.Username")).SendKeys(username);
-            Wait.UntilVisible(_repo.GetBy("Login.Password")).SendKeys(password);
+            var creds = CredentialProvider.GetDefaultCredentials();
+            Wait.UntilVisible(_repo.GetBy("Login.Username")).SendKeys(creds.Username);
+            Wait.UntilVisible(_repo.GetBy("Login.Password")).SendKeys(creds.Password);
             Wait.UntilClickable(_repo.GetBy("Login.Submit.Button")).Click();
-        }
-
-        public void HandleMfa()
-        {
-            if (Wait.UntilPresent(_repo.GetBy("Mfa.Dialog"), 5))
-            {
-                Wait.UntilClickable(_repo.GetBy("Mfa.EmailMethod.Select")).Click();
-                Thread.Sleep(500);
-                Wait.UntilClickable(_repo.GetBy("Mfa.SendCode.Button")).Click();
-            }
-        }
-
-        public void EnterOtpAndVerify()
-        {
-            var otp = ConfigManager.Settings.StaticOtp;
-            Wait.UntilVisible(_repo.GetBy("Otp.Code.Input")).SendKeys(otp);
-            Wait.UntilClickable(_repo.GetBy("Otp.Verify.Button")).Click();
         }
     }
 }

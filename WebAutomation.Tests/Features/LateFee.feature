@@ -1,38 +1,20 @@
-Feature: Late Fee and Payment Pop-up Handling
+Feature: Late Fee Message Display
 
-  Scenario Outline: Customer with pending OTP sees payment/autopay pop-up
-    Given the Customer Portal is launched
-    And the user logs in with credentials for a pending OTP account
-    And the user is on the Account Dashboard
-    When the user clicks "<Action>"
-    Then a pop-up with 'Continue' and 'Cancel' appears
-
-    Examples:
-      | TestCaseId                | Action             |
-      | HAP-903 TS-001 TC-001     | Make a Payment     |
-      | HAP-903 TS-004 TC-001     | Setup Autopay      |
-
-  Scenario Outline: Customer clicks Continue on payment/autopay pop-up
-    Given the Customer Portal is launched
-    And the user logs in with credentials for a pending OTP account
-    And the user is on the Account Dashboard
-    When the user clicks "<Action>"
-    And the user clicks 'Continue' on the pop-up
-    Then the user is routed to the "<ExpectedPage>" page
+  Scenario Outline: Late fee message display logic for HELOC payment
+    Given the user launches the customer servicing application
+    And logs in with valid credentials
+    And completes MFA verification
+    And the dashboard is loaded
+    And all pop-ups are dismissed
+    And the user selects the applicable loan account
+    When the user clicks Make a Payment
+    And handles the scheduled payment popup if present
+    And opens the payment date picker
+    And selects the payment date "<PaymentDate>"
+    Then the late fee message area should display late fee message: <ExpectedLateFee>
 
     Examples:
-      | TestCaseId                | Action             | ExpectedPage      |
-      | HAP-903 TS-002 TC-001     | Make a Payment     | Make a Payment    |
-      | HAP-903 TS-005 TC-001     | Setup Autopay      | Setup Autopay     |
-
-  Scenario Outline: Customer clicks Cancel on payment/autopay pop-up
-    Given the Customer Portal is launched
-    And the user logs in with credentials for a pending OTP account
-    And the user is on the Account Dashboard
-    When the user clicks "<Action>"
-    And the user clicks 'Cancel' on the pop-up
-    Then the pop-up is dismissed and user remains on Account Dashboard
-
-    Examples:
-      | TestCaseId                | Action             |
-      | HAP-903 TS-003 TC-001     | Make a Payment     |
+      | TestCaseId | LoanNumber | PaymentDate | State | ExpectedLateFee |
+      | TC01       | 3616       | 2025-12-20  | TX    | False           |
+      | TC02       | 3616       | 2026-01-23  | TX    | True            |
+      | TC03       | 3616       | 2026-01-16  | TX    | False           |
