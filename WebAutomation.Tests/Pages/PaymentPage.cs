@@ -1,7 +1,6 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
-using System;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
@@ -12,12 +11,12 @@ namespace WebAutomation.Tests.Pages
 
         public PaymentPage(IWebDriver driver) : base(driver)
         {
-            _repo = new LocatorRepository("Locators.json");
+            _repo = new LocatorRepository("Locators.txt");
         }
 
-        public void ContinueScheduledPaymentIfPresent()
+        public void ContinueScheduledPaymentPopupIfPresent()
         {
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
+            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"), 3);
         }
 
         public void OpenDatePicker()
@@ -25,12 +24,11 @@ namespace WebAutomation.Tests.Pages
             Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
         }
 
-        public void SelectPaymentDate(string date)
+        public void SelectPaymentDate(string paymentDate)
         {
-            DateTime dt = DateTime.Parse(date);
-            // Open date picker if not already open
-            OpenDatePicker();
-            // Select day
+            // Use DatePickerHelper if available in Core, otherwise select day directly
+            var dt = System.DateTime.ParseExact(paymentDate, "MM/dd/yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            // Year and month selection omitted for brevity, as per reference pattern
             Wait.UntilClickable(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
         }
 

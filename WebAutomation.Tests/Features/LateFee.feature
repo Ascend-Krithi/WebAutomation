@@ -1,20 +1,21 @@
 Feature: Late Fee Message Display
 
-  Scenario Outline: Late fee message display for HELOC loan payment date
+  Scenario Outline: Late fee message display based on payment date
     Given the user launches the customer servicing application
-    And the user logs in with valid credentials
-    And the user completes MFA verification
-    And the user is on the dashboard
-    And all pop-ups are dismissed if present
-    And the user selects the applicable loan account
-    When the user clicks Make a Payment
-    And the user continues past the scheduled payment popup if it appears
-    And the user opens the payment date picker
-    And the user selects the payment date from test data
-    Then the late fee message area should <LateFeeExpectation>
+    And logs in with valid customer credentials
+    And completes MFA verification
+    And navigates to the dashboard
+    And dismisses any pop-ups if present
+    And selects the applicable loan account
+    And clicks Make a Payment
+    And continues past the scheduled payment popup if present
+    And opens the payment date picker
+    And selects the payment date from test data
+    When the user observes the late-fee message area
+    Then the late fee message display should be "<LateFeeMessageExpected>"
 
     Examples:
-      | TestCaseId | LateFeeExpectation      |
-      | TC01       | not be displayed       |
-      | TC02       | be displayed           |
-      | TC03       | not be displayed       |
+      | TestCaseId              | LateFeeMessageExpected |
+      | HAP-700 TS-001 TC-001   | NotDisplayed          |
+      | HAP-700 TS-001 TC-002   | Displayed             |
+      | HAP-700 TS-001 TC-003   | NotDisplayed          |

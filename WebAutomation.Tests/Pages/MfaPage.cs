@@ -11,7 +11,7 @@ namespace WebAutomation.Tests.Pages
 
         public MfaPage(IWebDriver driver) : base(driver)
         {
-            _repo = new LocatorRepository("Locators.json");
+            _repo = new LocatorRepository("Locators.txt");
         }
 
         public void CompleteMfa()

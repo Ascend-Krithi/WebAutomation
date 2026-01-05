@@ -11,7 +11,7 @@ namespace WebAutomation.Tests.Pages
 
         public DashboardPage(IWebDriver driver) : base(driver)
         {
-            _repo = new LocatorRepository("Locators.json");
+            _repo = new LocatorRepository("Locators.txt");
         }
 
         public void WaitForPageReady()
@@ -19,13 +19,15 @@ namespace WebAutomation.Tests.Pages
             Wait.UntilVisible(_repo.GetBy("Dashboard.PageReady"));
         }
 
-        public void DismissPopups()
+        public void DismissPopupsIfPresent()
         {
-            // Contact Update
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"));
-            // Chatbot iframe is handled by framework
-            // Scheduled Payment
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
+            // Contact Update Popup
+            if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactPopup"), 3))
+            {
+                Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"), 3);
+                Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"), 3);
+            }
+            // Chatbot iframe handled by framework
         }
 
         public void SelectLoanAccount(string loanNumber)
