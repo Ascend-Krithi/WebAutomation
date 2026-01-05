@@ -1,7 +1,7 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Locators;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Utilities;
+using WebAutomation.Core.Locators;
+using System;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
@@ -12,10 +12,10 @@ namespace WebAutomation.Tests.Pages
 
         public PaymentPage(IWebDriver driver) : base(driver)
         {
-            _repo = new LocatorRepository("Locators.txt");
+            _repo = new LocatorRepository("Locators.json");
         }
 
-        public void ContinueScheduledPaymentPopupIfPresent()
+        public void ContinueScheduledPaymentIfPresent()
         {
             Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
         }
@@ -23,19 +23,27 @@ namespace WebAutomation.Tests.Pages
         public void OpenDatePicker()
         {
             Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
-            Wait.WaitForOverlay();
         }
 
         public void SelectPaymentDate(string date)
         {
-            var helper = new DatePickerHelper(Driver);
-            helper.SelectDate(date);
-            Thread.Sleep(500); // Allow UI to update
+            DateTime dt = DateTime.Parse(date);
+            // Open date picker if not already open
+            OpenDatePicker();
+            // Select day
+            Wait.UntilClickable(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return Wait.UntilPresent(_repo.GetBy("Payment.LateFee.Message"), 3);
+            try
+            {
+                return Driver.FindElement(_repo.GetBy("Payment.LateFee.Message")).Displayed;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
