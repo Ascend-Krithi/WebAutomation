@@ -1,6 +1,7 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
+using WebAutomation.Core.Pages;
+using WebAutomation.Core.Utilities;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
@@ -14,36 +15,27 @@ namespace WebAutomation.Tests.Pages
             _repo = new LocatorRepository("Locators.txt");
         }
 
-        public void ContinueScheduledPaymentIfPresent()
+        public void ContinueScheduledPaymentPopupIfPresent()
         {
             Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
         }
 
         public void OpenDatePicker()
         {
-            Driver.FindElement(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
-            Thread.Sleep(500); // Wait for calendar overlay
+            Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            Wait.WaitForOverlay();
         }
 
         public void SelectPaymentDate(string date)
         {
-            var dt = System.DateTime.Parse(date);
-            // Select year
-            Driver.FindElement(By.CssSelector("button.mat-calendar-period-button")).Click();
-            Thread.Sleep(200);
-            Driver.FindElement(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Year}']")).Click();
-            Thread.Sleep(200);
-            // Select month
-            Driver.FindElement(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.ToString("MMM")}'"])).Click();
-            Thread.Sleep(200);
-            // Select day
-            Driver.FindElement(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
-            Thread.Sleep(500);
+            var helper = new DatePickerHelper(Driver);
+            helper.SelectDate(date);
+            Thread.Sleep(500); // Allow UI to update
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            return Driver.FindElements(_repo.GetBy("Payment.LateFee.Message")).Count > 0;
+            return Wait.UntilPresent(_repo.GetBy("Payment.LateFee.Message"), 3);
         }
     }
 }

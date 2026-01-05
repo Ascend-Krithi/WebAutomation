@@ -1,6 +1,6 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
+using WebAutomation.Core.Pages;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
@@ -14,31 +14,33 @@ namespace WebAutomation.Tests.Pages
             _repo = new LocatorRepository("Locators.txt");
         }
 
-        public By PageReadyLocator() => _repo.GetBy("Dashboard.PageReady");
-
         public bool IsPageReady()
         {
-            return Driver.FindElements(_repo.GetBy("Dashboard.PageReady")).Count > 0;
+            return Wait.UntilPresent(_repo.GetBy("Dashboard.PageReady"));
         }
 
-        public void DismissPopups()
+        public void DismissAllPopups()
         {
-            // Contact Update
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"));
-            // Chatbot iframe is handled by framework
-            // Scheduled Payment popup handled in PaymentPage
+            // Contact Update Popup
+            if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactPopup")))
+            {
+                Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"));
+                Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
+            }
+            // Chatbot iframe handled by framework
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
             Driver.FindElement(_repo.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Thread.Sleep(500); // Wait for modal
+            Wait.UntilPresent(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber));
             Driver.FindElement(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            Thread.Sleep(1000); // Wait for loan details to load
         }
 
         public void ClickMakePayment()
         {
-            Driver.FindElement(_repo.GetBy("Dashboard.MakePayment.Button")).Click();
+            Wait.UntilClickable(_repo.GetBy("Dashboard.MakePayment.Button")).Click();
         }
     }
 }

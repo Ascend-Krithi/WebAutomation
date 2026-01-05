@@ -1,6 +1,6 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
+using WebAutomation.Core.Pages;
 using WebAutomation.Core.Configuration;
 
 namespace WebAutomation.Tests.Pages
@@ -14,10 +14,14 @@ namespace WebAutomation.Tests.Pages
             _repo = new LocatorRepository("Locators.txt");
         }
 
+        public bool IsPageReady()
+        {
+            return Wait.UntilPresent(_repo.GetBy("Otp.Code.Input"));
+        }
+
         public void EnterStaticOtpAndVerify()
         {
-            var otp = ConfigManager.Settings.StaticOtp;
-            Driver.FindElement(_repo.GetBy("Otp.Code.Input")).SendKeys(otp);
+            Driver.FindElement(_repo.GetBy("Otp.Code.Input")).SendKeys(ConfigManager.Settings.StaticOtp);
             Driver.FindElement(_repo.GetBy("Otp.Verify.Button")).Click();
         }
     }

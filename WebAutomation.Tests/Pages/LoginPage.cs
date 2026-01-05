@@ -1,7 +1,7 @@
 using OpenQA.Selenium;
+using WebAutomation.Core.Locators;
 using WebAutomation.Core.Pages;
 using WebAutomation.Core.Security;
-using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
@@ -14,7 +14,10 @@ namespace WebAutomation.Tests.Pages
             _repo = new LocatorRepository("Locators.txt");
         }
 
-        public By PageReadyLocator() => _repo.GetBy("Login.PageReady");
+        public bool IsPageReady()
+        {
+            return Wait.UntilPresent(_repo.GetBy("Login.PageReady"));
+        }
 
         public void LoginWithDefaultCredentials()
         {
