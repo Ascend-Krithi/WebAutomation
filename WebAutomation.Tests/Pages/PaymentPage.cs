@@ -14,34 +14,36 @@ namespace WebAutomation.Tests.Pages
             _repo = new LocatorRepository("Locators.txt");
         }
 
-        public void HandleScheduledPaymentPopup()
+        public void ContinueScheduledPaymentIfPresent()
         {
-            // Defensive: handle scheduled payment popup if present
             Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"));
         }
 
         public void OpenDatePicker()
         {
-            Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            Driver.FindElement(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            Thread.Sleep(500); // Wait for calendar overlay
         }
 
         public void SelectPaymentDate(string date)
         {
-            // Use DatePickerHelper if available in Core, otherwise select by day
             var dt = System.DateTime.Parse(date);
-            Wait.UntilClickable(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            // Select year
+            Driver.FindElement(By.CssSelector("button.mat-calendar-period-button")).Click();
+            Thread.Sleep(200);
+            Driver.FindElement(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.Year}']")).Click();
+            Thread.Sleep(200);
+            // Select month
+            Driver.FindElement(By.XPath($"//div[contains(@class,'mat-calendar-body-cell-content') and text()='{dt.ToString("MMM")}'"])).Click();
+            Thread.Sleep(200);
+            // Select day
+            Driver.FindElement(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            Thread.Sleep(500);
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            try
-            {
-                return Wait.UntilVisible(_repo.GetBy("Payment.LateFee.Message"), 5).Displayed;
-            }
-            catch
-            {
-                return false;
-            }
+            return Driver.FindElements(_repo.GetBy("Payment.LateFee.Message")).Count > 0;
         }
     }
 }

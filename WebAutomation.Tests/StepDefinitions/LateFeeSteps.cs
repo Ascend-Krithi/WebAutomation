@@ -13,17 +13,19 @@ namespace WebAutomation.Tests.StepDefinitions
     public class LateFeeSteps
     {
         private readonly ScenarioContext _scenarioContext;
-        private readonly string _excelPath;
-        private readonly string _sheetName = "Sheet1";
-        private Dictionary<string, string> _testData;
         private IWebDriver _driver;
         private SmartWait _wait;
         private PopupHandler _popup;
+        private Dictionary<string, string> _testData;
+        private LoginPage _loginPage;
+        private MfaPage _mfaPage;
+        private OtpPage _otpPage;
+        private DashboardPage _dashboardPage;
+        private PaymentPage _paymentPage;
 
         public LateFeeSteps(ScenarioContext scenarioContext)
         {
             _scenarioContext = scenarioContext;
-            _excelPath = System.IO.Path.Combine(AppContext.BaseDirectory, "LateFee", "LateFee.xlsx");
         }
 
         [Given(@"the user launches the customer servicing application")]
@@ -32,84 +34,97 @@ namespace WebAutomation.Tests.StepDefinitions
             _driver = _scenarioContext.Get<IWebDriver>("driver");
             _wait = _scenarioContext.Get<SmartWait>("wait");
             _popup = _scenarioContext.Get<PopupHandler>("popup");
+
+            _loginPage = new LoginPage(_driver);
+            _mfaPage = new MfaPage(_driver);
+            _otpPage = new OtpPage(_driver);
+            _dashboardPage = new DashboardPage(_driver);
+            _paymentPage = new PaymentPage(_driver);
+
             _driver.Navigate().GoToUrl(ConfigManager.Settings.BaseUrl);
-            _wait.UntilVisible(By.CssSelector("form"));
+            _wait.UntilVisible(_loginPage.PageReadyLocator());
         }
 
         [Given(@"logs in with valid credentials")]
         public void GivenLogsInWithValidCredentials()
         {
-            var loginPage = new LoginPage(_driver);
-            loginPage.LoginWithDefaultCredentials();
+            _loginPage.LoginWithDefaultCredentials();
+            _wait.UntilVisible(_mfaPage.PageReadyLocator());
         }
 
         [Given(@"completes MFA verification")]
         public void GivenCompletesMFAVerification()
         {
-            var mfaPage = new MfaPage(_driver);
-            mfaPage.CompleteMfa();
+            _mfaPage.SelectFirstEmailAndSendCode();
+            _otpPage.EnterStaticOtpAndVerify();
+            _wait.UntilVisible(_dashboardPage.PageReadyLocator());
         }
 
-        [Given(@"the dashboard is loaded")]
-        public void GivenTheDashboardIsLoaded()
+        [Given(@"navigates to the dashboard")]
+        public void GivenNavigatesToTheDashboard()
         {
-            var dashboardPage = new DashboardPage(_driver);
-            dashboardPage.WaitForDashboard();
+            // Already on dashboard after OTP
+            Assert.True(_dashboardPage.IsPageReady());
         }
 
-        [Given(@"all pop-ups are dismissed")]
-        public void GivenAllPopupsAreDismissed()
+        [Given(@"dismisses any pop-ups if present")]
+        public void GivenDismissesAnyPopupsIfPresent()
         {
-            var dashboardPage = new DashboardPage(_driver);
-            dashboardPage.DismissAllPopups();
+            _dashboardPage.DismissPopups();
         }
 
-        [Given(@"the user selects the applicable loan account")]
-        public void GivenTheUserSelectsTheApplicableLoanAccount(Table table)
+        [Given(@"selects the applicable loan account")]
+        public void GivenSelectsTheApplicableLoanAccount(Table table)
         {
-            var testCaseId = table.Rows[0]["TestCaseId"];
-            _testData = ExcelReader.GetRow(_excelPath, _sheetName, "TestCaseId", testCaseId);
-            var dashboardPage = new DashboardPage(_driver);
-            dashboardPage.SelectLoanAccount(_testData["LoanNumber"]);
+            var testCaseId = GetTestCaseId();
+            _testData = ExcelReader.GetRow(
+                filePath: "LateFee/LateFee.xlsx",
+                sheetName: "Sheet1",
+                keyColumn: "TestCaseId",
+                keyValue: testCaseId
+            );
+            var loanNumber = _testData["LoanNumber"];
+            _dashboardPage.SelectLoanAccount(loanNumber);
         }
 
         [When(@"the user clicks Make a Payment")]
         public void WhenTheUserClicksMakeAPayment()
         {
-            var dashboardPage = new DashboardPage(_driver);
-            dashboardPage.ClickMakePayment();
+            _dashboardPage.ClickMakePayment();
         }
 
-        [When(@"handles the scheduled payment popup if present")]
-        public void WhenHandlesTheScheduledPaymentPopupIfPresent()
+        [When(@"continues past the scheduled payment popup if it appears")]
+        public void WhenContinuesPastTheScheduledPaymentPopupIfItAppears()
         {
-            var paymentPage = new PaymentPage(_driver);
-            paymentPage.HandleScheduledPaymentPopup();
+            _paymentPage.ContinueScheduledPaymentIfPresent();
         }
 
         [When(@"opens the payment date picker")]
         public void WhenOpensThePaymentDatePicker()
         {
-            var paymentPage = new PaymentPage(_driver);
-            paymentPage.OpenDatePicker();
+            _paymentPage.OpenDatePicker();
         }
 
-        [When(@"selects the payment date \"(.*)\"")]
-        public void WhenSelectsThePaymentDate(string paymentDate)
+        [When(@"selects the payment date from test data")]
+        public void WhenSelectsThePaymentDateFromTestData()
         {
-            var paymentPage = new PaymentPage(_driver);
-            paymentPage.SelectPaymentDate(paymentDate);
+            var paymentDate = _testData["PaymentDate"];
+            _paymentPage.SelectPaymentDate(paymentDate);
         }
 
-        [Then(@"the late fee message area should display late fee message: (.*)")]
-        public void ThenTheLateFeeMessageAreaShouldDisplayLateFeeMessage(bool expectedLateFee)
+        [Then(@"the late fee message area should (.*)")]
+        public void ThenTheLateFeeMessageAreaShould(string expectation)
         {
-            var paymentPage = new PaymentPage(_driver);
-            bool isLateFeeDisplayed = paymentPage.IsLateFeeMessageDisplayed();
-            if (expectedLateFee)
-                Assert.True(isLateFeeDisplayed, "Expected late fee message to be displayed, but it was not.");
+            bool isLateFeeDisplayed = _paymentPage.IsLateFeeMessageDisplayed();
+            if (expectation == "be displayed")
+                Assert.True(isLateFeeDisplayed, "Expected late fee message to be displayed.");
             else
-                Assert.False(isLateFeeDisplayed, "Expected no late fee message, but it was displayed.");
+                Assert.False(isLateFeeDisplayed, "Expected late fee message to NOT be displayed.");
+        }
+
+        private string GetTestCaseId()
+        {
+            return _scenarioContext.ScenarioInfo.Arguments["TestCaseId"].ToString();
         }
     }
 }

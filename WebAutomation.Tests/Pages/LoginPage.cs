@@ -14,12 +14,14 @@ namespace WebAutomation.Tests.Pages
             _repo = new LocatorRepository("Locators.txt");
         }
 
+        public By PageReadyLocator() => _repo.GetBy("Login.PageReady");
+
         public void LoginWithDefaultCredentials()
         {
             var creds = CredentialProvider.GetDefaultCredentials();
-            Wait.UntilVisible(_repo.GetBy("Login.Username")).SendKeys(creds.Username);
-            Wait.UntilVisible(_repo.GetBy("Login.Password")).SendKeys(creds.Password);
-            Wait.UntilClickable(_repo.GetBy("Login.Submit.Button")).Click();
+            Driver.FindElement(_repo.GetBy("Login.Username")).SendKeys(creds.Username);
+            Driver.FindElement(_repo.GetBy("Login.Password")).SendKeys(creds.Password);
+            Driver.FindElement(_repo.GetBy("Login.Submit.Button")).Click();
         }
     }
 }
