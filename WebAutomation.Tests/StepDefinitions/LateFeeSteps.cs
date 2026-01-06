@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using TechTalk.SpecFlow;
+using OpenQA.Selenium;
+using WebAutomation.Core.Configuration;
 using WebAutomation.Core.Utilities;
 using WebAutomation.Tests.Pages;
 
@@ -11,14 +13,13 @@ namespace WebAutomation.Tests.StepDefinitions
     public class LateFeeSteps
     {
         private readonly ScenarioContext _scenarioContext;
-        private Dictionary<string, string> _testData;
         private IWebDriver _driver;
-        private SmartWait _wait;
-        private PopupHandler _popup;
+        private Dictionary<string, string> _testData;
+        private string _testDataPath;
+        private string _sheetName = "Sheet1"; // Adjust if sheet name differs
+        private DashboardPage _dashboardPage;
         private LoginPage _loginPage;
         private MfaPage _mfaPage;
-        private OtpPage _otpPage;
-        private DashboardPage _dashboardPage;
         private PaymentPage _paymentPage;
 
         public LateFeeSteps(ScenarioContext scenarioContext)
@@ -26,100 +27,86 @@ namespace WebAutomation.Tests.StepDefinitions
             _scenarioContext = scenarioContext;
         }
 
-        [Given(@"the user launches the customer servicing application")]
-        public void GivenTheUserLaunchesTheCustomerServicingApplication()
+        [Given(@"I launch the customer servicing application")]
+        public void GivenILaunchTheCustomerServicingApplication()
         {
             _driver = _scenarioContext.Get<IWebDriver>("driver");
-            _wait = _scenarioContext.Get<SmartWait>("wait");
-            _popup = _scenarioContext.Get<PopupHandler>("popup");
-
+            _testDataPath = ConfigManager.Settings.TestDataPath;
+            _driver.Navigate().GoToUrl(ConfigManager.Settings.BaseUrl);
             _loginPage = new LoginPage(_driver);
-            _mfaPage = new MfaPage(_driver);
-            _otpPage = new OtpPage(_driver);
-            _dashboardPage = new DashboardPage(_driver);
-            _paymentPage = new PaymentPage(_driver);
-
-            var baseUrl = WebAutomation.Core.Configuration.ConfigManager.Settings.BaseUrl;
-            _driver.Navigate().GoToUrl(baseUrl);
-            _loginPage.WaitForPageReady();
         }
 
-        [Given(@"logs in using valid customer credentials")]
-        public void GivenLogsInUsingValidCustomerCredentials()
+        [Given(@"I log in using valid customer credentials")]
+        public void GivenILogInUsingValidCustomerCredentials()
         {
             _loginPage.LoginWithDefaultCredentials();
+            _mfaPage = new MfaPage(_driver);
         }
 
-        [Given(@"completes MFA verification")]
-        public void GivenCompletesMFAVerification()
+        [Given(@"I complete MFA verification")]
+        public void GivenICompleteMFAVerification()
         {
-            _mfaPage.CompleteMfa();
-            _otpPage.EnterOtpAndVerify();
+            _mfaPage.CompleteMfaVerification();
+            _dashboardPage = new DashboardPage(_driver);
         }
 
-        [Given(@"navigates to the dashboard")]
-        public void GivenNavigatesToTheDashboard()
+        [Given(@"I navigate to the dashboard")]
+        public void GivenINavigateToTheDashboard()
         {
-            _dashboardPage.WaitForPageReady();
+            _dashboardPage.WaitForDashboardToLoad();
         }
 
-        [Given(@"dismisses any pop-ups if present")]
-        public void GivenDismissesAnyPopUpsIfPresent()
+        [Given(@"I dismiss any pop-ups if present")]
+        public void GivenIDismissAnyPopUpsIfPresent()
         {
-            _dashboardPage.HandlePopups();
+            _dashboardPage.DismissPopupsIfPresent();
         }
 
-        [Given(@"selects the applicable loan account")]
-        public void GivenSelectsTheApplicableLoanAccount()
+        [Given(@"I select the applicable loan account from test data "(.*)"")]
+        public void GivenISelectTheApplicableLoanAccountFromTestData(string testCaseId)
         {
-            var featureFilePath = "LateFee/LateFee.xlsx";
-            var sheetName = "Sheet1";
-            var testCaseId = _scenarioContext.Get<string>("TestCaseId");
-            _testData = ExcelReader.GetRow(featureFilePath, sheetName, "TestCaseId", testCaseId);
-
-            var loanNumber = _testData["LoanNumber"];
+            _testData = ExcelReader.GetRow(_testDataPath, _sheetName, "TestCaseId", testCaseId);
+            string loanNumber = _testData["LoanNumber"];
             _dashboardPage.SelectLoanAccount(loanNumber);
         }
 
-        [Given(@"clicks Make a Payment")]
-        public void GivenClicksMakeAPayment()
+        [Given(@"I click Make a Payment")]
+        public void GivenIClickMakeAPayment()
         {
-            _dashboardPage.ClickMakePayment();
+            _dashboardPage.ClickMakeAPayment();
+            _paymentPage = new PaymentPage(_driver);
         }
 
-        [Given(@"continues past any scheduled payment popup if present")]
-        public void GivenContinuesPastAnyScheduledPaymentPopupIfPresent()
+        [Given(@"I continue past the scheduled payment popup if it appears")]
+        public void GivenIContinuePastTheScheduledPaymentPopupIfItAppears()
         {
-            _paymentPage.HandleScheduledPaymentPopup();
+            _paymentPage.ContinueScheduledPaymentIfPresent();
         }
 
-        [Given(@"opens the payment date picker")]
-        public void GivenOpensThePaymentDatePicker()
+        [Given(@"I open the payment date picker")]
+        public void GivenIOpenThePaymentDatePicker()
         {
-            _paymentPage.OpenDatePicker();
+            _paymentPage.OpenPaymentDatePicker();
         }
 
-        [Given(@"selects the payment date from test data")]
-        public void GivenSelectsThePaymentDateFromTestData()
+        [Given(@"I select the payment date from test data "(.*)"")]
+        public void GivenISelectThePaymentDateFromTestData(string testCaseId)
         {
-            var paymentDate = _testData["PaymentDate"];
+            string paymentDate = _testData["PaymentDate"];
             _paymentPage.SelectPaymentDate(paymentDate);
         }
 
-        [Then(@"the late fee message area should (.*)")]
-        public void ThenTheLateFeeMessageAreaShould(string expectation)
+        [Then(@"the late fee message area should be "(.*)"")]
+        public void ThenTheLateFeeMessageAreaShouldBe(string expectedLateFeeMessage)
         {
-            var expectedLateFee = _testData["ExpectedLateFee"].Equals("True", StringComparison.OrdinalIgnoreCase);
-
             bool isLateFeeDisplayed = _paymentPage.IsLateFeeMessageDisplayed();
-
-            if (expectedLateFee)
+            if (expectedLateFeeMessage == "Displayed")
             {
-                Assert.True(isLateFeeDisplayed, "Late fee message should be displayed but was not.");
+                Assert.True(isLateFeeDisplayed, "Expected late fee message to be displayed, but it was not.");
             }
             else
             {
-                Assert.False(isLateFeeDisplayed, "Late fee message should not be displayed but was.");
+                Assert.False(isLateFeeDisplayed, "Expected late fee message to not be displayed, but it was.");
             }
         }
     }

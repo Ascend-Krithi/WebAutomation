@@ -1,23 +1,21 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
+using WebAutomation.Core.Configuration;
 
 namespace WebAutomation.Tests.Pages
 {
     public class MfaPage : BasePage
     {
-        private readonly LocatorRepository _locators;
+        public MfaPage(IWebDriver driver) : base(driver) { }
 
-        public MfaPage(IWebDriver driver) : base(driver)
+        public void CompleteMfaVerification()
         {
-            _locators = new LocatorRepository("Locators.json");
-        }
-
-        public void CompleteMfa()
-        {
-            Wait.UntilVisible(_locators.GetBy("Mfa.Dialog"));
-            Driver.FindElement(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
-            Driver.FindElement(_locators.GetBy("Mfa.SendCode.Button")).Click();
+            Wait.UntilClickable(By.XPath("//select")).Click();
+            Driver.FindElement(By.XPath("//select/option[1]")).Click();
+            Driver.FindElement(By.XPath("//button[contains(text(),'Receive code via email')]")).Click();
+            Wait.UntilVisible(By.Id("otp"));
+            Driver.FindElement(By.Id("otp")).SendKeys(ConfigManager.Settings.StaticOtp);
+            Driver.FindElement(By.XPath("//button[contains(text(),'Verify')]")).Click();
         }
     }
 }

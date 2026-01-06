@@ -1,39 +1,36 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Locators;
 using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
-        private readonly LocatorRepository _locators;
+        public DashboardPage(IWebDriver driver) : base(driver) { }
 
-        public DashboardPage(IWebDriver driver) : base(driver)
+        public void WaitForDashboardToLoad()
         {
-            _locators = new LocatorRepository("Locators.json");
+            Wait.UntilVisible(By.XPath("//h1[contains(text(),'Dashboard')]"));
         }
 
-        public void WaitForPageReady()
+        public void DismissPopupsIfPresent()
         {
-            Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
-        }
-
-        public void HandlePopups()
-        {
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            // Contact Update popup
+            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Update Later']"));
+            // Chatbot iframe handled by framework
+            // Scheduled Payment popup
+            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Continue']"));
+            // Angular overlays handled by framework
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
-            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            Wait.UntilClickable(By.XPath($"//div[contains(@class,'loan-account') and contains(text(),'{loanNumber}')]")).Click();
         }
 
-        public void ClickMakePayment()
+        public void ClickMakeAPayment()
         {
-            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
+            Wait.UntilClickable(By.XPath("//span[contains(text(),'Make a Payment')]")).Click();
         }
     }
 }
