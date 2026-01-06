@@ -1,28 +1,23 @@
 using OpenQA.Selenium;
-using WebAutomation.Core.Locators;
 using WebAutomation.Core.Pages;
-using WebAutomation.Core.Configuration;
+using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
     public class OtpPage : BasePage
     {
-        private readonly LocatorRepository _repo;
+        private readonly LocatorRepository _locators;
 
         public OtpPage(IWebDriver driver) : base(driver)
         {
-            _repo = new LocatorRepository("Locators.txt");
+            _locators = new LocatorRepository("Locators.json");
         }
 
-        public bool IsPageReady()
+        public void EnterOtpAndVerify()
         {
-            return Wait.UntilPresent(_repo.GetBy("Otp.Code.Input"));
-        }
-
-        public void EnterStaticOtpAndVerify()
-        {
-            Driver.FindElement(_repo.GetBy("Otp.Code.Input")).SendKeys(ConfigManager.Settings.StaticOtp);
-            Driver.FindElement(_repo.GetBy("Otp.Verify.Button")).Click();
+            var staticOtp = WebAutomation.Core.Configuration.ConfigManager.Settings.StaticOtp;
+            Wait.UntilVisible(_locators.GetBy("Otp.Code.Input")).SendKeys(staticOtp);
+            Driver.FindElement(_locators.GetBy("Otp.Verify.Button")).Click();
         }
     }
 }

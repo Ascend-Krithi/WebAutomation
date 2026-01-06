@@ -7,41 +7,32 @@ namespace WebAutomation.Tests.Pages
 {
     public class PaymentPage : BasePage
     {
-        private readonly LocatorRepository _repo;
+        private readonly LocatorRepository _locators;
 
         public PaymentPage(IWebDriver driver) : base(driver)
         {
-            _repo = new LocatorRepository("Locators.txt");
+            _locators = new LocatorRepository("Locators.json");
         }
 
-        public void ContinueScheduledPaymentPopupIfPresent()
+        public void HandleScheduledPaymentPopup()
         {
-            Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"), 3);
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
 
         public void OpenDatePicker()
         {
-            Wait.UntilClickable(_repo.GetBy("Payment.DatePicker.Toggle")).Click();
+            Wait.UntilClickable(_locators.GetBy("Payment.DatePicker.Toggle")).Click();
         }
 
         public void SelectPaymentDate(string paymentDate)
         {
-            // Use DatePickerHelper if available in Core, otherwise select day directly
-            var dt = System.DateTime.ParseExact(paymentDate, "MM/dd/yyyy", System.Globalization.CultureInfo.InvariantCulture);
-            // Year and month selection omitted for brevity, as per reference pattern
-            Wait.UntilClickable(_repo.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
+            var dt = DateTime.Parse(paymentDate);
+            Wait.UntilClickable(_locators.GetBy("Payment.Calendar.Day", dt.Day.ToString())).Click();
         }
 
         public bool IsLateFeeMessageDisplayed()
         {
-            try
-            {
-                return Driver.FindElement(_repo.GetBy("Payment.LateFee.Message")).Displayed;
-            }
-            catch
-            {
-                return false;
-            }
+            return Wait.UntilPresent(_locators.GetBy("Payment.LateFee.Message"), 5);
         }
     }
 }

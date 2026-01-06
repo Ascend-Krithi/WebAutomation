@@ -7,39 +7,33 @@ namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
-        private readonly LocatorRepository _repo;
+        private readonly LocatorRepository _locators;
 
         public DashboardPage(IWebDriver driver) : base(driver)
         {
-            _repo = new LocatorRepository("Locators.txt");
+            _locators = new LocatorRepository("Locators.json");
         }
 
         public void WaitForPageReady()
         {
-            Wait.UntilVisible(_repo.GetBy("Dashboard.PageReady"));
+            Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
         }
 
-        public void DismissPopupsIfPresent()
+        public void HandlePopups()
         {
-            // Contact Update Popup
-            if (Popup.IsPresent(_repo.GetBy("Dashboard.ContactPopup"), 3))
-            {
-                Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactUpdateLater"), 3);
-                Popup.HandleIfPresent(_repo.GetBy("Dashboard.ContactContinue"), 3);
-            }
-            // Chatbot iframe handled by framework
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
-            Driver.FindElement(_repo.GetBy("Dashboard.LoanSelector.Button")).Click();
-            Wait.UntilVisible(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber));
-            Driver.FindElement(_repo.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
         }
 
         public void ClickMakePayment()
         {
-            Wait.UntilClickable(_repo.GetBy("Dashboard.MakePayment.Button")).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
         }
     }
 }
