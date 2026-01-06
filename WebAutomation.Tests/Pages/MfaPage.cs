@@ -1,6 +1,7 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
+using WebAutomation.Core.Configuration;
 
 namespace WebAutomation.Tests.Pages
 {
@@ -10,15 +11,14 @@ namespace WebAutomation.Tests.Pages
 
         public MfaPage(IWebDriver driver) : base(driver) { }
 
-        public void SelectFirstEmailMethod()
+        public void CompleteMfa()
         {
-            Wait.UntilClickable(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
-            Driver.FindElement(_locators.GetBy("Mfa.EmailMethod.Select")).SendKeys(Keys.ArrowDown + Keys.Enter);
-        }
-
-        public void ClickReceiveCode()
-        {
-            Wait.UntilClickable(_locators.GetBy("Mfa.SendCode.Button")).Click();
+            Wait.UntilVisible(_locators.GetBy("Mfa.Dialog"));
+            Driver.FindElement(_locators.GetBy("Mfa.EmailMethod.Select")).Click();
+            Driver.FindElement(_locators.GetBy("Mfa.SendCode.Button")).Click();
+            Wait.UntilVisible(_locators.GetBy("Otp.Code.Input"));
+            Driver.FindElement(_locators.GetBy("Otp.Code.Input")).SendKeys(ConfigManager.Settings.StaticOtp);
+            Driver.FindElement(_locators.GetBy("Otp.Verify.Button")).Click();
         }
     }
 }

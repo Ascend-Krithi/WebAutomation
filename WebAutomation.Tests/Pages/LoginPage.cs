@@ -11,14 +11,10 @@ namespace WebAutomation.Tests.Pages
 
         public LoginPage(IWebDriver driver) : base(driver) { }
 
-        public void WaitForPageReady()
-        {
-            Wait.UntilVisible(_locators.GetBy("Login.PageReady"));
-        }
-
         public void LoginWithDefaultCredentials()
         {
             var creds = CredentialProvider.GetDefaultCredentials();
+            Wait.UntilVisible(_locators.GetBy("Login.PageReady"));
             Driver.FindElement(_locators.GetBy("Login.Username")).SendKeys(creds.Username);
             Driver.FindElement(_locators.GetBy("Login.Password")).SendKeys(creds.Password);
             Driver.FindElement(_locators.GetBy("Login.Submit.Button")).Click();

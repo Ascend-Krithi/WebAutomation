@@ -1,6 +1,7 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
 using WebAutomation.Core.Locators;
+using System.Threading;
 
 namespace WebAutomation.Tests.Pages
 {
@@ -10,15 +11,19 @@ namespace WebAutomation.Tests.Pages
 
         public DashboardPage(IWebDriver driver) : base(driver) { }
 
-        public void WaitForPageReady()
+        public void WaitForDashboard()
         {
             Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
         }
 
-        public void HandlePopupsIfPresent()
+        public void DismissPopups()
         {
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            // Contact Update
+            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            {
+                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+            }
+            // Chatbot handled by framework
         }
 
         public void SelectLoanAccount(string loanNumber)
@@ -30,11 +35,6 @@ namespace WebAutomation.Tests.Pages
         public void ClickMakePayment()
         {
             Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
-        }
-
-        public void HandleScheduledPaymentPopupIfPresent()
-        {
-            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
     }
 }
