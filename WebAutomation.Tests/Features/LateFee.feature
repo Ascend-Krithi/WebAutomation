@@ -1,20 +1,20 @@
 Feature: Late Fee Message Display
 
   Scenario Outline: Late fee message display based on payment date
-    Given I launch the customer servicing application
-    And I log in using valid customer credentials
-    And I complete MFA verification
-    And I navigate to the dashboard
-    And I dismiss any pop-ups if present
-    And I select the applicable loan account from test data "<TestCaseId>"
-    And I click Make a Payment
-    And I continue past the scheduled payment popup if it appears
-    And I open the payment date picker
-    And I select the payment date from test data "<TestCaseId>"
-    Then the late fee message area should be "<ExpectedLateFeeMessage>"
+    Given the user launches the customer servicing application
+    And logs in using valid customer credentials
+    And completes MFA verification
+    And navigates to the dashboard
+    And closes any pop-ups if present
+    And selects the applicable loan account
+    And clicks Make a Payment
+    And continues past any scheduled payment popup if present
+    And opens the payment date picker
+    And selects the payment date from test data
+    Then the late fee message area should display the expected result
 
     Examples:
-      | TestCaseId              | PaymentDate | ExpectedLateFeeMessage |
-      | HAP-700 TS-001 TC-001   | <from data> | NotDisplayed          |
-      | HAP-700 TS-001 TC-002   | <from data> | Displayed             |
-      | HAP-700 TS-001 TC-003   | <from data> | NotDisplayed          |
+      | TestCaseId | LoanNumber | PaymentDate  | State | ExpectedLateFee |
+      | HAP-700 TS-001 TC-001 | 8409 | 2026-01-06 | TX | False |
+      | HAP-700 TS-001 TC-002 | 8409 | 2026-01-23 | TX | True  |
+      | HAP-700 TS-001 TC-003 | 8409 | 2026-01-16 | TX | False |

@@ -1,36 +1,40 @@
 using OpenQA.Selenium;
 using WebAutomation.Core.Pages;
-using System.Threading;
+using WebAutomation.Core.Locators;
 
 namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
+        private readonly LocatorRepository _locators = new LocatorRepository("Locators.txt");
+
         public DashboardPage(IWebDriver driver) : base(driver) { }
 
-        public void WaitForDashboardToLoad()
+        public void WaitForPageReady()
         {
-            Wait.UntilVisible(By.XPath("//h1[contains(text(),'Dashboard')]"));
+            Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
         }
 
-        public void DismissPopupsIfPresent()
+        public void HandlePopupsIfPresent()
         {
-            // Contact Update popup
-            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Update Later']"));
-            // Chatbot iframe handled by framework
-            // Scheduled Payment popup
-            Popup.HandleIfPresent(By.XPath("//button[normalize-space()='Continue']"));
-            // Angular overlays handled by framework
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
 
         public void SelectLoanAccount(string loanNumber)
         {
-            Wait.UntilClickable(By.XPath($"//div[contains(@class,'loan-account') and contains(text(),'{loanNumber}')]")).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanSelector.Button")).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.LoanCard.ByAccount", loanNumber)).Click();
         }
 
-        public void ClickMakeAPayment()
+        public void ClickMakePayment()
         {
-            Wait.UntilClickable(By.XPath("//span[contains(text(),'Make a Payment')]")).Click();
+            Wait.UntilClickable(_locators.GetBy("Dashboard.MakePayment.Button")).Click();
+        }
+
+        public void HandleScheduledPaymentPopupIfPresent()
+        {
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
         }
     }
 }
