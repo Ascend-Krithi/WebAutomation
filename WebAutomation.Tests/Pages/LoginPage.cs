@@ -7,17 +7,21 @@ namespace WebAutomation.Tests.Pages
 {
     public class LoginPage : BasePage
     {
-        private readonly LocatorRepository _locators = new LocatorRepository("Locators.txt");
+        private readonly LocatorRepository _locators;
 
-        public LoginPage(IWebDriver driver) : base(driver) { }
+        public By PageReadyLocator => _locators.GetBy("Login.PageReady");
+
+        public LoginPage(IWebDriver driver) : base(driver)
+        {
+            _locators = new LocatorRepository("Locators.json");
+        }
 
         public void LoginWithDefaultCredentials()
         {
             var creds = CredentialProvider.GetDefaultCredentials();
-            Wait.UntilVisible(_locators.GetBy("Login.PageReady"));
-            Driver.FindElement(_locators.GetBy("Login.Username")).SendKeys(creds.Username);
-            Driver.FindElement(_locators.GetBy("Login.Password")).SendKeys(creds.Password);
-            Driver.FindElement(_locators.GetBy("Login.Submit.Button")).Click();
+            Wait.UntilVisible(_locators.GetBy("Login.Username")).SendKeys(creds.Username);
+            Wait.UntilVisible(_locators.GetBy("Login.Password")).SendKeys(creds.Password);
+            Wait.UntilClickable(_locators.GetBy("Login.Submit.Button")).Click();
         }
     }
 }

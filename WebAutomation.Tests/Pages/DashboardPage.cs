@@ -7,23 +7,34 @@ namespace WebAutomation.Tests.Pages
 {
     public class DashboardPage : BasePage
     {
-        private readonly LocatorRepository _locators = new LocatorRepository("Locators.txt");
+        private readonly LocatorRepository _locators;
 
-        public DashboardPage(IWebDriver driver) : base(driver) { }
+        public By PageReadyLocator => _locators.GetBy("Dashboard.PageReady");
 
-        public void WaitForDashboard()
+        public DashboardPage(IWebDriver driver) : base(driver)
         {
-            Wait.UntilVisible(_locators.GetBy("Dashboard.PageReady"));
+            _locators = new LocatorRepository("Locators.json");
         }
 
-        public void DismissPopups()
+        public bool IsPageReady()
+        {
+            return Wait.UntilVisible(PageReadyLocator) != null;
+        }
+
+        public void DismissAllPopups()
         {
             // Contact Update
-            if (Popup.IsPresent(_locators.GetBy("Dashboard.ContactPopup")))
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+            Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactContinue"));
+            // Chatbot iframe
+            try
             {
-                Popup.HandleIfPresent(_locators.GetBy("Dashboard.ContactUpdateLater"));
+                var iframe = Driver.FindElement(_locators.GetBy("Chatbot.Iframe"));
+                ((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].style.display='none';", iframe);
             }
-            // Chatbot handled by framework
+            catch { }
+            // Angular overlays
+            Thread.Sleep(500);
         }
 
         public void SelectLoanAccount(string loanNumber)

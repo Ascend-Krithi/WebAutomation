@@ -7,9 +7,14 @@ namespace WebAutomation.Tests.Pages
 {
     public class OtpPage : BasePage
     {
-        private readonly LocatorRepository _locators = new LocatorRepository("Locators.txt");
+        private readonly LocatorRepository _locators;
 
-        public OtpPage(IWebDriver driver) : base(driver) { }
+        public By CodeInputLocator => _locators.GetBy("Otp.Code.Input");
+
+        public OtpPage(IWebDriver driver) : base(driver)
+        {
+            _locators = new LocatorRepository("Locators.json");
+        }
 
         public void EnterStaticOtpAndVerify()
         {
